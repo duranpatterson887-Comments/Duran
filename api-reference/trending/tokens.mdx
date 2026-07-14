@@ -1,0 +1,170 @@
+---
+title: "Trending Tokens — Community Sentiment Signals"
+sidebarTitle: "Trending"
+description: "Fetch tokens gaining traction in the CMC community. Surface momentum plays by combining trending rank with price and volume signals."
+---
+
+The CoinMarketCap community generates a continuous stream of engagement signals — posts, watchlist adds, portfolio updates, and page visits. The trending tokens endpoint distills that activity into a ranked list of tokens gaining outsized attention right now, giving you a real-time pulse on where community interest is flowing before it necessarily shows up in price.
+
+## Endpoint
+
+```
+GET https://pro-api.coinmarketcap.com/v1/community/trending/token
+```
+
+Authenticate every request by passing your API key in the `X-CMC_PRO_API_KEY` header. All responses are wrapped in the standard CMC status envelope.
+
+## Request Parameters
+
+<ParamField query="start" type="integer" default="1">
+  Pagination offset. Returns results starting from this rank position. Use with `limit` to page through the full trending list.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="10">
+  Number of tokens to return per call. Accepts values between **1** and **100**.
+</ParamField>
+
+<ParamField query="time_period" type="string" default="24h">
+  The look-back window used to calculate trending rank. Accepted values:
+
+  - `24h` — last 24 hours (default)
+  - `7d` — last 7 days
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="status" type="object">
+  Standard CMC response envelope present on every API call.
+  <Expandable title="status fields">
+    <ResponseField name="timestamp" type="string">ISO 8601 timestamp of when the response was generated.</ResponseField>
+    <ResponseField name="error_code" type="integer">0 on success; non-zero values indicate an error condition.</ResponseField>
+    <ResponseField name="credit_count" type="integer">Number of API credits consumed by this call.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Ordered array of trending token objects, sorted ascending by `trending_rank`.
+  <Expandable title="token object fields">
+    <ResponseField name="id" type="integer">
+      CoinMarketCap's unique internal identifier for the asset.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Full name of the cryptocurrency (e.g., `"Bitcoin"`).
+    </ResponseField>
+    <ResponseField name="symbol" type="string">
+      Ticker symbol (e.g., `"BTC"`).
+    </ResponseField>
+    <ResponseField name="slug" type="string">
+      URL-friendly identifier used in CMC page paths (e.g., `"bitcoin"`).
+    </ResponseField>
+    <ResponseField name="cmc_rank" type="integer">
+      Overall CoinMarketCap rank by market capitalization.
+    </ResponseField>
+    <ResponseField name="trending_rank" type="integer">
+      Community-activity rank for the requested `time_period`. Rank 1 is the most-trending token.
+    </ResponseField>
+    <ResponseField name="quote" type="object">
+      Price data quoted in your requested conversion currency (USD by default).
+      <Expandable title="quote.USD fields">
+        <ResponseField name="price" type="number">Current price in USD.</ResponseField>
+        <ResponseField name="percent_change_24h" type="number">24-hour price change expressed as a percentage.</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -s \
+  --url "https://pro-api.coinmarketcap.com/v1/community/trending/token?limit=3&time_period=24h" \
+  --header "X-CMC_PRO_API_KEY: YOUR_API_KEY"
+```
+
+```python Python
+import requests
+
+url = "https://pro-api.coinmarketcap.com/v1/community/trending/token"
+headers = {"X-CMC_PRO_API_KEY": "YOUR_API_KEY"}
+params = {"limit": 3, "time_period": "24h"}
+
+response = requests.get(url, headers=headers, params=params)
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://pro-api.coinmarketcap.com/v1/community/trending/token?limit=3&time_period=24h",
+  { headers: { "X-CMC_PRO_API_KEY": "YOUR_API_KEY" } }
+);
+const data = await response.json();
+console.log(data);
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "status": {
+    "timestamp": "2025-01-15T14:32:00.000Z",
+    "error_code": 0,
+    "credit_count": 1
+  },
+  "data": [
+    {
+      "id": 1,
+      "name": "Bitcoin",
+      "symbol": "BTC",
+      "slug": "bitcoin",
+      "cmc_rank": 1,
+      "trending_rank": 1,
+      "quote": {
+        "USD": {
+          "price": 97450.23,
+          "percent_change_24h": 3.81
+        }
+      }
+    },
+    {
+      "id": 1027,
+      "name": "Ethereum",
+      "symbol": "ETH",
+      "slug": "ethereum",
+      "cmc_rank": 2,
+      "trending_rank": 2,
+      "quote": {
+        "USD": {
+          "price": 3312.77,
+          "percent_change_24h": 5.14
+        }
+      }
+    },
+    {
+      "id": 52433,
+      "name": "Pepe",
+      "symbol": "PEPE",
+      "slug": "pepe",
+      "cmc_rank": 18,
+      "trending_rank": 3,
+      "quote": {
+        "USD": {
+          "price": 0.00001847,
+          "percent_change_24h": 12.43
+        }
+      }
+    }
+  ]
+}
+```
+
+<Tip>
+  **Identify momentum plays by layering signals.** A token climbing the trending ranks while simultaneously posting strong `percent_change_24h` gains and rising 24-hour trading volume is exhibiting multi-dimensional momentum. Consider pulling trending data alongside the `/v2/cryptocurrency/quotes/latest` endpoint to overlay volume and market-cap context on each trending token before making analytical decisions.
+</Tip>
+
+<Note>
+  Trending rank reflects **community engagement** — watchlists, page views, posts, and social interactions — rather than raw price performance. A token can trend at rank 1 while its price is flat or even declining, for example during a governance vote, a major protocol announcement, or a viral community discussion. Always cross-reference `percent_change_24h` and volume data for a complete picture.
+</Note>

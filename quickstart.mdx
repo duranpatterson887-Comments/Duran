@@ -1,47 +1,149 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Quickstart: Fetch Your First Live Crypto Price"
+sidebarTitle: "Quickstart"
+description: "Go from zero to a live Bitcoin price in minutes. Follow these four steps to make your first CoinMarketCap API call and parse the response."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
-
-## Prerequisites
-
-Before you begin, you must have:
-
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
-
-<Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
-
-    ```bash
-    npm install your-package
-    ```
-  </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
-
-    ```bash
-    your-cli init
-    ```
-  </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
-
-    ```bash
-    your-cli start
-    ```
-  </Step>
-</Steps>
+This guide gets you from a blank terminal to a live Bitcoin price in under five minutes. You'll create a free account, make your first authenticated request to the `/v2/cryptocurrency/quotes/latest` endpoint, and learn how to extract the data you need from the JSON response. By the end, you'll have a working foundation you can extend to any asset, any metric, and any use case.
 
 <Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
-
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
+  Want to explore the API before signing up? Use the **Keyless trial endpoint** at `https://pro-api.coinmarketcap.com/trial-pro-api` — no API key or account required. It covers a limited subset of endpoints and is perfect for zero-setup evaluation. See [Authentication](/authentication#keyless-access) for details.
 </Tip>
+
+<Steps>
+  <Step title="Create Your Free Account and Get an API Key">
+    1. Open [pro.coinmarketcap.com/signup](https://pro.coinmarketcap.com/signup) in your browser.
+    2. Register with your email address and confirm your account.
+    3. Navigate to **Dashboard → API Keys**.
+    4. Copy your key — it looks like `b54bcf4d-1bca-4e8e-9a24-22ff2c3d462c`.
+
+    Store this key somewhere safe. You'll pass it as a request header in every API call.
+
+    <Note>
+      The free **Basic plan** gives you 15,000 credits per month — no credit card required. That's enough to make hundreds of price-quote calls daily while you prototype.
+    </Note>
+  </Step>
+
+  <Step title="Make Your First API Call">
+    Fetch the latest Bitcoin price using your preferred tool. Pass your API key in the `X-CMC_PRO_API_KEY` header.
+
+    <CodeGroup>
+      ```bash cURL
+      curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+        "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest?symbol=BTC"
+      ```
+
+      ```python Python
+      import requests
+
+      url = 'https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest'
+      headers = {'X-CMC_PRO_API_KEY': 'YOUR_API_KEY'}
+      params = {'symbol': 'BTC', 'convert': 'USD'}
+
+      response = requests.get(url, headers=headers, params=params)
+      data = response.json()
+      price = data['data']['BTC'][0]['quote']['USD']['price']
+      print(f'BTC Price: ${price:,.2f}')
+      ```
+
+      ```javascript Node.js
+      const axios = require('axios');
+
+      const response = await axios.get(
+        'https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest',
+        {
+          headers: { 'X-CMC_PRO_API_KEY': 'YOUR_API_KEY' },
+          params: { symbol: 'BTC', convert: 'USD' },
+        }
+      );
+
+      const price = response.data.data.BTC[0].quote.USD.price;
+      console.log(`BTC Price: $${price.toLocaleString()}`);
+      ```
+    </CodeGroup>
+
+    <Note>
+      Every API response includes a `credit_count` field inside the `status` object. The `/v2/cryptocurrency/quotes/latest` endpoint costs **1 credit per call**. Monitor your monthly usage in the [dashboard](https://pro.coinmarketcap.com) to stay within your plan's allocation.
+    </Note>
+  </Step>
+
+  <Step title="Parse the Response">
+    A successful call returns a JSON object with two top-level keys: `status` (request metadata) and `data` (the market data payload). Here's an abbreviated example for BTC:
+
+    ```json
+    {
+      "status": {
+        "timestamp": "2025-01-15T12:00:00.000Z",
+        "error_code": 0,
+        "error_message": null,
+        "credit_count": 1,
+        "elapsed": 12
+      },
+      "data": {
+        "BTC": [
+          {
+            "id": 1,
+            "name": "Bitcoin",
+            "symbol": "BTC",
+            "slug": "bitcoin",
+            "cmc_rank": 1,
+            "circulating_supply": 19800000,
+            "total_supply": 21000000,
+            "max_supply": 21000000,
+            "last_updated": "2025-01-15T12:00:00.000Z",
+            "quote": {
+              "USD": {
+                "price": 102345.67,
+                "volume_24h": 48234567890,
+                "volume_change_24h": 5.21,
+                "percent_change_1h": 0.38,
+                "percent_change_24h": 2.45,
+                "percent_change_7d": 6.12,
+                "market_cap": 2034567890123,
+                "market_cap_dominance": 54.3,
+                "fully_diluted_market_cap": 2149258070000,
+                "last_updated": "2025-01-15T12:00:00.000Z"
+              }
+            }
+          }
+        ]
+      }
+    }
+    ```
+
+    The fields you'll use most often:
+
+    | Field | Path | Description |
+    |---|---|---|
+    | Current price | `data.BTC[0].quote.USD.price` | Latest USD price |
+    | 24 h change | `data.BTC[0].quote.USD.percent_change_24h` | Price change as a percentage |
+    | 24 h volume | `data.BTC[0].quote.USD.volume_24h` | Total trading volume in USD |
+    | Market cap | `data.BTC[0].quote.USD.market_cap` | Circulating supply × price |
+    | Credits used | `status.credit_count` | Credits deducted for this call |
+
+    <Tip>
+      The `data` value is an **array** even when you query a single symbol — this is because multiple tokens can share the same ticker. Always access `data['BTC'][0]` (index zero) to retrieve the primary listing.
+    </Tip>
+  </Step>
+
+  <Step title="Explore More Endpoints">
+    You've got live data flowing — now expand your integration with the rest of the platform.
+
+    <CardGroup cols={2}>
+      <Card title="Listings & Rankings" icon="list-ol" href="https://coinmarketcap.com/api/documentation/v1/#operation/getV1CryptocurrencyListingsLatest">
+        Fetch the full ranked list of cryptocurrencies by market cap with `/v1/cryptocurrency/listings/latest`.
+      </Card>
+      <Card title="Historical OHLCV" icon="chart-candlestick" href="https://coinmarketcap.com/api/documentation/v1/#operation/getV2CryptocurrencyOhlcvLatest">
+        Pull daily or hourly open/high/low/close/volume data for any asset.
+      </Card>
+      <Card title="Global Metrics" icon="globe" href="https://coinmarketcap.com/api/documentation/v1/#operation/getV1GlobalmetricsQuotesLatest">
+        Get total crypto market cap, BTC dominance, and DeFi volume with `/v1/global-metrics/quotes/latest`.
+      </Card>
+      <Card title="DEX Pairs" icon="arrow-right-arrow-left" href="https://coinmarketcap.com/api/documentation/v1/">
+        Analyse liquidity pool data and swap volumes across decentralised exchanges.
+      </Card>
+    </CardGroup>
+
+    Browse the complete endpoint catalog in the [API Reference](https://coinmarketcap.com/api/documentation/v1/) or check the [Plans & Credits](/plans-and-credits) page to understand what's available on your current plan.
+  </Step>
+</Steps>

@@ -1,0 +1,87 @@
+---
+title: "CoinMarketCap API Frequently Asked Questions"
+sidebarTitle: "FAQ"
+description: "Answers to the most common questions about CoinMarketCap API credits, plans, data usage, rate limits, and historical data access."
+---
+
+Whether you're just getting started or scaling to millions of API calls, these answers cover the questions that come up most often from CoinMarketCap API users. If your question isn't here, visit the [developer portal](https://pro.coinmarketcap.com) or reach out to support.
+
+<Accordion title="What is a credit and how many do I use per call?">
+  A **credit** is the unit CoinMarketCap uses to measure API consumption. Most basic endpoint calls cost **1 credit**. Some endpoints that return richer or more data — such as bulk quote requests or historical OHLCV — cost additional credits proportional to the number of assets or data points returned.
+
+  Every API response includes a `status.credit_count` field that tells you exactly how many credits that specific call consumed. Monitor this field during development so you can accurately project your monthly usage before choosing a plan.
+</Accordion>
+
+<Accordion title="Can I use the API for free?">
+  Yes. The **Basic plan** is free forever and requires no credit card. It includes **15,000 credits per month**, giving you access to core endpoints such as latest listings, quotes, and global metrics.
+
+  Free plan limits are designed for personal projects, prototyping, and low-traffic applications. When your usage or feature needs grow, you can upgrade to a paid plan at any time from the [developer dashboard](https://pro.coinmarketcap.com).
+</Accordion>
+
+<Accordion title="Can I cache or store CoinMarketCap data?">
+  Yes, with conditions. You may cache CoinMarketCap data to serve it to your own application's users — for example, displaying prices on your website or inside your app. This is standard and expected behavior.
+
+  What is **not** permitted is redistributing CMC data as a standalone data feed or selling it to third parties. If your use case involves reselling or sublicensing the data, contact the enterprise team to discuss a data licensing agreement.
+</Accordion>
+
+<Accordion title="What happens when I exceed my rate limit?">
+  When you exceed your plan's rate limit, the API returns an **HTTP 429 (Too Many Requests)** response. Your application should handle this gracefully by:
+
+  1. Reading the `Retry-After` header (when present) to know how long to wait.
+  2. Implementing **exponential backoff** — wait 1 second, then 2, then 4, and so on — before retrying.
+  3. Reviewing your call patterns to reduce unnecessary requests (e.g., caching responses locally for the appropriate data freshness window).
+
+  Sustained rate-limit violations may temporarily restrict your API key. Upgrading your plan increases both your monthly credit allowance and your per-minute call limit.
+</Accordion>
+
+<Accordion title="Why do symbols like USDT appear multiple times?">
+  The same ticker symbol can represent tokens deployed on **multiple blockchains**. USDT, for example, exists on Ethereum (ERC-20), Tron (TRC-20), Solana, BNB Chain, and others — each as a distinct on-chain asset with its own contract address.
+
+  CoinMarketCap assigns a unique **CMC ID** (a stable numeric identifier) to each distinct asset. Always use the CMC ID rather than the symbol string when you need to reference a specific token unambiguously. You can look up IDs with the `/v1/cryptocurrency/map` endpoint.
+</Accordion>
+
+<Accordion title="What is the difference between the Startup and Growth plans?">
+  Both plans unlock advanced endpoints beyond the free Basic tier, but they differ in scale:
+
+  | Feature | Startup | Growth |
+  |---------|---------|--------|
+  | Monthly credits | 450,000 | 2,000,000 |
+  | Endpoints | Core + expanded set | All 80+ endpoints |
+  | Historical data | Up to 1 year | Up to 3 years (daily) |
+  | WebSocket | Not included | Included |
+
+  The **Growth plan** is the right choice when you need the full endpoint catalog — including DEX data, advanced historical OHLCV, and WebSocket price streams — or when your application handles significant traffic.
+</Accordion>
+
+<Accordion title="How do I get historical data older than 1 year?">
+  Historical depth depends on your plan:
+
+  - **Basic / Hobbyist** — Limited or no historical access.
+  - **Startup** — Up to 1 year of daily OHLCV data.
+  - **Builder** — Up to 3 years of daily historical data.
+  - **Startup+ / Growth and above** — Full all-time historical data going back to each asset's first recorded price on CoinMarketCap.
+
+  Upgrade your plan from the [developer dashboard](https://pro.coinmarketcap.com) to unlock deeper historical access.
+</Accordion>
+
+<Accordion title="Is WebSocket available on the free plan?">
+  No. WebSocket streaming requires the **Startup plan ($79/month)** or higher. WebSocket connections deliver real-time price updates pushed to your client the moment they change — ideal for live dashboards, trading terminals, and alerting systems.
+
+  On the free Basic plan, you can poll the REST API for the latest quotes, but you will not have access to persistent WebSocket streams.
+</Accordion>
+
+<Accordion title="What currencies can I convert to?">
+  CoinMarketCap supports a wide range of conversion targets via the `convert` parameter:
+
+  - **93 fiat currencies** — including USD, EUR, GBP, JPY, AUD, CAD, and more.
+  - **4 precious metals** — XAU (Gold), XAG (Silver), XPT (Platinum), and XPD (Palladium).
+  - **Any cryptocurrency tracked by CoinMarketCap** — pass the CMC ID of any listed crypto as the conversion target.
+
+  Use the `/v1/fiat/map` endpoint to retrieve the full list of supported fiat currency codes.
+</Accordion>
+
+<Accordion title="How do I get Enterprise support?">
+  Enterprise plans offer custom credit volumes, dedicated SLAs, white-glove onboarding, and direct access to the CoinMarketCap data team. They are tailored for high-traffic applications, financial institutions, and data redistribution use cases.
+
+  To discuss Enterprise pricing and requirements, contact the sales team directly at [pro.coinmarketcap.com](https://pro.coinmarketcap.com). A team member will respond to outline options and draft a custom agreement for your needs.
+</Accordion>

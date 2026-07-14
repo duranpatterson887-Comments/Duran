@@ -1,0 +1,162 @@
+---
+title: "Global Market Metrics — Crypto Market Overview"
+sidebarTitle: "Global Metrics"
+description: "Fetch a real-time aggregate snapshot of the entire cryptocurrency market: total cap, dominance, DeFi volume, sentiment index, and altcoin season indicator."
+---
+
+The global metrics endpoint is your single-call summary of the entire cryptocurrency market's current state. In one response you receive the total market capitalisation, 24-hour trading volume, Bitcoin and Ethereum dominance percentages, DeFi-specific volume, the Fear & Greed sentiment index, and the Altcoin Season Index — the essential macro signals that professional analysts and portfolio managers use to frame every market decision. Whether you're building a market dashboard, a macro alert system, or a cycle-detection model, this is the endpoint to start with.
+
+## Endpoint
+
+<ParamField path="GET /v1/global-metrics/quotes/latest" type="string">
+  Retrieve the latest aggregate statistics covering the entire cryptocurrency market.
+</ParamField>
+
+**Base URL:** `https://pro-api.coinmarketcap.com`
+
+**Authentication:** Pass your API key in the `X-CMC_PRO_API_KEY` request header.
+
+---
+
+## Request Parameters
+
+<ParamField query="convert" type="string">
+  Return market cap and volume totals denominated in an additional fiat or cryptocurrency (e.g., `EUR`, `GBP`, `BTC`). Multiple values are supported as a comma-separated list.
+</ParamField>
+
+<ParamField query="convert_id" type="string">
+  Alternatively, specify conversion currencies by CoinMarketCap ID (e.g., `2781` for USD, `2790` for EUR). Useful when dealing with currencies that share ticker symbols.
+</ParamField>
+
+---
+
+## Response Fields
+
+<ResponseField name="active_cryptocurrencies" type="integer">
+  The number of cryptocurrency assets currently active and tracked on CoinMarketCap with at least one active market pair.
+</ResponseField>
+
+<ResponseField name="total_cryptocurrencies" type="integer">
+  The all-time total number of cryptocurrency assets ever tracked on CoinMarketCap, including inactive and delisted assets.
+</ResponseField>
+
+<ResponseField name="active_exchanges" type="integer">
+  The number of exchanges currently reporting active market data to CoinMarketCap.
+</ResponseField>
+
+<ResponseField name="active_market_pairs" type="integer">
+  The total count of active trading pairs across all tracked exchanges at the time of the request.
+</ResponseField>
+
+<ResponseField name="btc_dominance" type="number">
+  Bitcoin's share of total global cryptocurrency market capitalisation, expressed as a percentage (e.g., `54.21`).
+</ResponseField>
+
+<ResponseField name="eth_dominance" type="number">
+  Ethereum's share of total global cryptocurrency market capitalisation, expressed as a percentage.
+</ResponseField>
+
+<ResponseField name="defi_volume_24h" type="number">
+  Aggregate 24-hour trading volume across all tracked DeFi protocols and DEXes, denominated in USD.
+</ResponseField>
+
+<ResponseField name="quote" type="object">
+  <Expandable title="Quote object (USD by default)">
+    <ResponseField name="total_market_cap" type="number">
+      The sum of all cryptocurrency market capitalisations in the requested currency.
+    </ResponseField>
+    <ResponseField name="total_volume_24h" type="number">
+      Total reported 24-hour trading volume across all tracked exchanges, in the requested currency.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="fear_and_greed_value" type="integer">
+  A composite sentiment score from `0` (Extreme Fear) to `100` (Extreme Greed), aggregating volatility, market momentum, social media signals, and dominance data.
+</ResponseField>
+
+<ResponseField name="fear_and_greed_value_classification" type="string">
+  Human-readable classification of the current Fear & Greed value. Possible values:
+
+  | Classification | Score Range |
+  |----------------|-------------|
+  | `Extreme Fear` | 0 – 24 |
+  | `Fear` | 25 – 44 |
+  | `Neutral` | 45 – 55 |
+  | `Greed` | 56 – 74 |
+  | `Extreme Greed` | 75 – 100 |
+</ResponseField>
+
+<ResponseField name="altcoin_season_index" type="integer">
+  A score from `0` to `100` measuring how broadly altcoin performance is outpacing Bitcoin over a 90-day window. A score above `75` indicates Altcoin Season; below `25` indicates Bitcoin Season.
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --request GET \
+  --url "https://pro-api.coinmarketcap.com/v1/global-metrics/quotes/latest?convert=USD" \
+  --header "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  --header "Accept: application/json"
+```
+
+```python Python
+import requests
+
+url = "https://pro-api.coinmarketcap.com/v1/global-metrics/quotes/latest"
+headers = {
+    "X-CMC_PRO_API_KEY": "YOUR_API_KEY",
+    "Accept": "application/json",
+}
+params = {
+    "convert": "USD",
+}
+
+response = requests.get(url, headers=headers, params=params)
+data = response.json()
+print(data)
+```
+
+</CodeGroup>
+
+### Sample Response
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-15T14:00:00.000Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 8,
+    "credit_count": 1
+  },
+  "data": {
+    "active_cryptocurrencies": 9832,
+    "total_cryptocurrencies": 25410,
+    "active_exchanges": 782,
+    "active_market_pairs": 93041,
+    "btc_dominance": 54.21,
+    "eth_dominance": 12.84,
+    "defi_volume_24h": 8402938120.00,
+    "fear_and_greed_value": 72,
+    "fear_and_greed_value_classification": "Greed",
+    "altcoin_season_index": 61,
+    "quote": {
+      "USD": {
+        "total_market_cap": 2841039482910.00,
+        "total_volume_24h": 142039482100.00,
+        "last_updated": "2024-11-15T13:59:00.000Z"
+      }
+    },
+    "last_updated": "2024-11-15T13:59:00.000Z"
+  }
+}
+```
+
+<Tip>
+  Combine `total_market_cap` and `btc_dominance` to read the macro cycle phase. Rising total market cap alongside rising BTC dominance typically signals a Bitcoin-led accumulation phase. When total market cap continues climbing but BTC dominance starts falling, capital is rotating into altcoins — often the early signal of a broad altcoin rally. Cross-reference with `fear_and_greed_value` and `altcoin_season_index` to confirm the thesis before rebalancing a portfolio.
+</Tip>

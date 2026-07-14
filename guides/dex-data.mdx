@@ -1,0 +1,221 @@
+---
+title: "Query On-Chain DEX Data and Token Analytics"
+sidebarTitle: "DEX Data"
+description: "Access real-time DEX token prices, pair liquidity, new listings, and pool-level analytics across Ethereum, Base, Solana, and more."
+---
+
+Decentralized exchanges now account for a significant share of global crypto trading volume, and the signals they generate — new listings, liquidity shifts, whale swaps — often move centralized markets before traditional price feeds catch up. CoinMarketCap's v4 DEX endpoints give you direct access to on-chain token prices, pair analytics, trending tokens, and pool-level OHLCV data across all major networks, enabling you to build arbitrage detectors, token scanners, and LP performance dashboards with the same API key you already use for spot prices.
+
+## Search for a Token on DEX
+
+Use `/v4/dex/search` with a `keyword` parameter to look up any token by name, symbol, or contract address. This is the fastest way to discover the canonical on-chain identifiers for a token before querying its live price or pair data.
+
+```bash curl
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v4/dex/search?keyword=PEPE"
+```
+
+The response returns a list of matched tokens, each with the following key fields:
+
+| Field | Description |
+|-------|-------------|
+| `address` | Contract address on the specified network |
+| `network` | Network slug where the token is deployed (e.g., `ethereum`, `base`, `solana`) |
+| `dex` | DEX where the primary pool is located (e.g., `uniswap-v3`, `raydium`) |
+| `name` / `symbol` | Human-readable token name and ticker |
+| `price_usd` | Current token price in USD |
+| `liquidity_usd` | Total liquidity across all tracked pools |
+| `volume_24h_usd` | 24-hour trading volume |
+
+Always verify the contract address before using a token in production — multiple tokens can share the same symbol. Cross-reference with the `network` and `liquidity_usd` fields to identify the canonical deployment.
+
+---
+
+## Get Token Price On-Chain
+
+Fetch the live on-chain price for any token using its contract address via `/v4/dex/tokens/quotes/latest`. Pass the `network_slug` to specify which blockchain to query.
+
+**Supported `network_slug` values include:** `ethereum`, `base`, `bsc`, `solana`, `arbitrum`, `optimism`, `polygon`, `avalanche`, `sui`, `ton`
+
+```python Python
+import requests
+
+API_KEY = "YOUR_API_KEY"
+BASE_URL = "https://pro-api.coinmarketcap.com"
+
+def get_token_price_onchain(contract_address: str, network_slug: str) -> dict:
+    """
+    Fetch the current on-chain price for a token by contract address.
+
+    Args:
+        contract_address: Token contract address (checksummed for EVM chains)
+        network_slug:     Network identifier, e.g. "ethereum", "base", "solana"
+
+    Returns:
+        dict with price, liquidity, and volume data
+    """
+    response = requests.get(
+        f"{BASE_URL}/v4/dex/tokens/quotes/latest",
+        headers={"X-CMC_PRO_API_KEY": API_KEY},
+        params={
+            "address": contract_address,
+            "network_slug": network_slug,
+        },
+    )
+    response.raise_for_status()
+    token_data = response.json()["data"][0]
+
+    return {
+        "name": token_data["name"],
+        "symbol": token_data["symbol"],
+        "price_usd": token_data["price_usd"],
+        "liquidity_usd": token_data["liquidity_usd"],
+        "volume_24h_usd": token_data["volume_24h_usd"],
+        "network": token_data["network_slug"],
+    }
+
+
+# Example: PEPE on Ethereum
+pepe_address = "0x6982508145454ce325ddbe47a25d4ec3d2311933"
+result = get_token_price_onchain(pepe_address, "ethereum")
+print(f"{result['symbol']} on {result['network']}: ${result['price_usd']:.8f}")
+print(f"Liquidity: ${result['liquidity_usd']:,.0f}  |  24h Vol: ${result['volume_24h_usd']:,.0f}")
+```
+
+---
+
+## Fetch DEX Pair Data
+
+The `/v4/dex/pairs/quotes/latest` endpoint returns real-time metrics for a specific trading pair, identified by its on-chain pair contract address.
+
+```bash curl
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v4/dex/pairs/quotes/latest\
+?address=0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640\
+&network_slug=ethereum"
+```
+
+The response includes:
+
+| Field | Description |
+|-------|-------------|
+| `pair_address` | On-chain contract address of the liquidity pool |
+| `base_token` | Token being priced (name, symbol, address) |
+| `quote_token` | Denominator token (e.g., USDC, WETH) |
+| `price_usd` | Mid-price of the base token in USD |
+| `price_native` | Price expressed in the quote token |
+| `volume_24h_usd` | 24-hour swap volume in USD |
+| `liquidity_usd` | Total value locked in the pool |
+| `fee_tier` | Pool fee in basis points (e.g., `500` = 0.05%) |
+| `dex` | DEX protocol (e.g., `uniswap-v3`, `curve`, `orca`) |
+| `transactions_24h` | Number of swaps in the last 24 hours |
+
+---
+
+## Discover New and Trending Tokens
+
+CoinMarketCap provides dedicated endpoints for tracking the most active and newest on-chain tokens. Combine these to build a real-time token discovery feed.
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /v4/dex/tokens/new` | Tokens listed on DEXs within the last 24 hours |
+| `GET /v4/dex/tokens/trending` | Tokens ranked by volume and transaction count |
+| `GET /v4/dex/tokens/gainers` | Top price gainers over the last 1h, 6h, or 24h |
+
+The Python example below monitors new DEX listings across all networks, filtering for tokens that already have meaningful liquidity:
+
+```python Python
+import requests
+import time
+
+API_KEY = "YOUR_API_KEY"
+BASE_URL = "https://pro-api.coinmarketcap.com"
+HEADERS = {"X-CMC_PRO_API_KEY": API_KEY}
+
+MIN_LIQUIDITY_USD = 50_000   # only surface tokens with $50k+ liquidity
+POLL_INTERVAL_SECS = 60
+
+def fetch_new_listings(network_slug: str = None, limit: int = 50) -> list:
+    """Fetch the latest new DEX token listings, optionally filtered by network."""
+    params = {"limit": limit}
+    if network_slug:
+        params["network_slug"] = network_slug
+
+    response = requests.get(
+        f"{BASE_URL}/v4/dex/tokens/new",
+        headers=HEADERS,
+        params=params,
+    )
+    response.raise_for_status()
+    return response.json().get("data", [])
+
+
+def monitor_new_listings():
+    """Poll for new listings every minute and print high-liquidity tokens."""
+    seen_addresses = set()
+
+    print("Monitoring new DEX listings... (Ctrl+C to stop)\n")
+    while True:
+        try:
+            tokens = fetch_new_listings(limit=100)
+            new_count = 0
+
+            for token in tokens:
+                addr = token.get("address")
+                liquidity = token.get("liquidity_usd", 0) or 0
+
+                if addr in seen_addresses or liquidity < MIN_LIQUIDITY_USD:
+                    continue
+
+                seen_addresses.add(addr)
+                new_count += 1
+                print(
+                    f"[NEW]  {token['symbol']:<12} "
+                    f"on {token['network_slug']:<12} "
+                    f"| Price: ${token['price_usd']:.6f} "
+                    f"| Liquidity: ${liquidity:,.0f} "
+                    f"| DEX: {token.get('dex_slug', 'unknown')}"
+                )
+
+            if new_count == 0:
+                print(f"No new high-liquidity listings this cycle.")
+
+        except requests.RequestException as e:
+            print(f"Request error: {e}")
+
+        time.sleep(POLL_INTERVAL_SECS)
+
+
+if __name__ == "__main__":
+    monitor_new_listings()
+```
+
+---
+
+## Pool Analytics
+
+For liquidity providers and yield farmers, `/v4/dex/pools/ohlcv/historical` returns pool-level OHLCV bars — letting you analyse price discovery, fee income patterns, and impermanent loss exposure over time.
+
+```bash curl
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v4/dex/pools/ohlcv/historical\
+?address=0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640\
+&network_slug=ethereum\
+&interval=daily\
+&time_start=2025-01-01\
+&time_end=2025-03-31"
+```
+
+Use pool OHLCV data to:
+
+- **Measure LP performance** — compare pool price range to actual traded range to assess fee capture efficiency
+- **Identify volume spikes** — unusual volume bars often precede token-level price moves on centralized exchanges
+- **Backtest concentrated liquidity positions** — model in-range vs. out-of-range time for Uniswap v3 style pools
+
+<Warning>
+  On-chain data reflects the state of the blockchain at the time of indexing and may lag by **15–60 seconds** compared to centralized exchange feeds due to block confirmation times and indexer processing. For latency-critical applications, combine DEX data with centralized quote endpoints and treat the on-chain feed as confirmation rather than a primary trigger signal.
+</Warning>
+
+<Tip>
+  Pair DEX token prices from `/v4/dex/tokens/quotes/latest` with centralized prices from `/v2/cryptocurrency/quotes/latest` to compute the **CEX–DEX price spread** in real time. A persistent spread above trading costs is a quantifiable arbitrage signal. Store both feeds in a time-series database and alert when the spread exceeds your threshold.
+</Tip>

@@ -1,0 +1,195 @@
+---
+title: "Cryptocurrency Quotes — Live Price Data"
+sidebarTitle: "Quotes"
+description: "Fetch real-time price, volume, market cap, and percentage change data for one or many cryptocurrencies in any conversion currency you choose."
+---
+
+The quotes endpoint gives you a live, on-demand snapshot of price and market data for one or more cryptocurrencies in a single API call. You can look up assets by their CoinMarketCap ID, ticker symbol, or slug, and receive quotes in any combination of fiat currencies and cryptocurrencies simultaneously. This is the go-to endpoint for portfolio valuation, price widgets, trading dashboards, and alert systems.
+
+## Endpoint
+
+```
+GET /v2/cryptocurrency/quotes/latest
+```
+
+## Parameters
+
+<ParamField query="id" type="string">
+  One or more CoinMarketCap cryptocurrency IDs, comma-separated. Example: `"1,1027"` for Bitcoin and Ethereum. Using IDs is the most reliable lookup method because IDs never change, even if a symbol is reused.
+</ParamField>
+
+<ParamField query="symbol" type="string">
+  One or more cryptocurrency ticker symbols, comma-separated. Example: `"BTC,ETH,SOL"`. Convenient, but symbols can be ambiguous — see the warning below.
+</ParamField>
+
+<ParamField query="slug" type="string">
+  One or more URL-friendly slugs, comma-separated. Example: `"bitcoin,ethereum,solana"`. Slugs are stable and human-readable.
+</ParamField>
+
+<ParamField query="convert" type="string">
+  A comma-separated list of fiat or cryptocurrency symbols to use as the quote currency. Each currency adds one credit to the call cost. Example: `"USD,EUR,BTC"`. Defaults to `USD`.
+</ParamField>
+
+<ParamField query="convert_id" type="string">
+  Alternative to `convert` — specify conversion currencies by their CoinMarketCap ID instead of symbol. Useful when the symbol is ambiguous (e.g., multiple tokens share a ticker).
+</ParamField>
+
+<ParamField query="aux" type="string">
+  Comma-separated list of additional fields to include in the response. Available options: `num_market_pairs`, `cmc_rank`, `date_added`, `tags`, `platform`, `max_supply`, `circulating_supply`, `total_supply`, `market_cap_by_total_supply`, `volume_24h_reported`, `volume_7d`, `volume_30d`, `is_market_cap_included_in_calc`. Omit to keep responses lean.
+</ParamField>
+
+<ParamField query="skip_invalid" type="boolean">
+  When `true`, the API returns data for all valid symbols and silently omits any unrecognised ones rather than returning an error for the entire batch. Useful when processing user-supplied lists of unknown quality. Defaults to `false`.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="data" type="object">
+  A map of asset identifiers to cryptocurrency objects. Keys are the IDs (when looked up by ID) or symbols (when looked up by symbol).
+
+  <Expandable title="Cryptocurrency object fields">
+    <ResponseField name="id" type="integer">
+      The unique CoinMarketCap ID.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Full name, e.g., `"Bitcoin"`.
+    </ResponseField>
+    <ResponseField name="symbol" type="string">
+      Ticker symbol, e.g., `"BTC"`.
+    </ResponseField>
+    <ResponseField name="slug" type="string">
+      URL-friendly identifier, e.g., `"bitcoin"`.
+    </ResponseField>
+    <ResponseField name="last_updated" type="string">
+      ISO 8601 UTC timestamp of the most recent data refresh for this asset.
+    </ResponseField>
+
+    <ResponseField name="quote" type="object">
+      A map of conversion-currency keys (e.g., `"USD"`) to quote objects.
+
+      <Expandable title="Quote object fields">
+        <ResponseField name="price" type="number">
+          Current spot price in the target currency.
+        </ResponseField>
+        <ResponseField name="volume_24h" type="number">
+          Aggregate trading volume over the last 24 hours in the target currency.
+        </ResponseField>
+        <ResponseField name="market_cap" type="number">
+          Market capitalisation (`price × circulating_supply`) in the target currency.
+        </ResponseField>
+        <ResponseField name="percent_change_1h" type="number">
+          Price percentage change over the last 1 hour.
+        </ResponseField>
+        <ResponseField name="percent_change_24h" type="number">
+          Price percentage change over the last 24 hours.
+        </ResponseField>
+        <ResponseField name="percent_change_7d" type="number">
+          Price percentage change over the last 7 days.
+        </ResponseField>
+        <ResponseField name="last_updated" type="string">
+          ISO 8601 UTC timestamp when this specific quote was last calculated.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest?id=1&convert=USD,EUR"
+```
+
+```python Python
+import requests
+
+API_KEY = "YOUR_API_KEY"
+
+url = "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest"
+headers = {"X-CMC_PRO_API_KEY": API_KEY}
+params = {
+    "id": "1,1027",      # Bitcoin and Ethereum
+    "convert": "USD,EUR"
+}
+
+response = requests.get(url, headers=headers, params=params, timeout=10)
+response.raise_for_status()
+
+data = response.json()
+
+for asset_id, asset in data["data"].items():
+    usd_quote = asset["quote"]["USD"]
+    print(
+        f"{asset['name']} ({asset['symbol']}): "
+        f"${usd_quote['price']:,.2f} | "
+        f"24h: {usd_quote['percent_change_24h']:+.2f}%"
+    )
+```
+
+</CodeGroup>
+
+## Example Response
+
+The following shows a full response for Bitcoin (ID `1`) with USD and EUR quotes.
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-15T14:30:00.000Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 7,
+    "credit_count": 2,
+    "notice": null
+  },
+  "data": {
+    "1": {
+      "id": 1,
+      "name": "Bitcoin",
+      "symbol": "BTC",
+      "slug": "bitcoin",
+      "is_active": 1,
+      "is_fiat": 0,
+      "circulating_supply": 19780000,
+      "total_supply": 19780000,
+      "max_supply": 21000000,
+      "date_added": "2013-04-28T00:00:00.000Z",
+      "num_market_pairs": 11432,
+      "cmc_rank": 1,
+      "last_updated": "2024-11-15T14:29:00.000Z",
+      "tags": ["mineable", "pow", "sha-256", "store-of-value", "layer-1"],
+      "quote": {
+        "USD": {
+          "price": 91245.82,
+          "volume_24h": 38412876543.21,
+          "volume_change_24h": 12.34,
+          "percent_change_1h": 0.31,
+          "percent_change_24h": 2.14,
+          "percent_change_7d": 8.76,
+          "percent_change_30d": 27.50,
+          "market_cap": 1804824712580.0,
+          "market_cap_dominance": 56.12,
+          "fully_diluted_market_cap": 1916162220000.0,
+          "last_updated": "2024-11-15T14:29:00.000Z"
+        },
+        "EUR": {
+          "price": 84346.27,
+          "volume_24h": 35508129381.75,
+          "percent_change_1h": 0.30,
+          "percent_change_24h": 2.11,
+          "percent_change_7d": 8.62,
+          "market_cap": 1668422817814.6,
+          "last_updated": "2024-11-15T14:29:00.000Z"
+        }
+      }
+    }
+  }
+}
+```
+
+<Warning>
+  **Symbol ambiguity in production:** Multiple cryptocurrencies can share the same ticker symbol (e.g., `LUNA` was reused after the original project collapsed). When you look up by `symbol`, CoinMarketCap returns the asset with the highest market cap for that symbol — which may not be the one you intended. **Use the `id` parameter in any production system** where correctness matters. You can obtain canonical IDs from the `/v1/cryptocurrency/map` endpoint.
+</Warning>

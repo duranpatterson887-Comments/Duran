@@ -1,0 +1,171 @@
+---
+title: "API Response Format and Status Envelope"
+sidebarTitle: "Response Format"
+description: "Every CoinMarketCap API response wraps its payload in a standard JSON envelope with a status object containing error codes, credit usage, and timing metadata."
+---
+
+Every response from the CoinMarketCap API — whether a success or an error — is wrapped in a consistent JSON envelope. This standardized structure means you can write a single response-handling layer in your application that works correctly across every endpoint: check the `status` object first, then read your `data` payload with confidence.
+
+## The Status Object
+
+The top-level `status` object is always present, regardless of whether the request succeeded or failed. It gives you everything you need to confirm success, diagnose errors, and track credit consumption in one place.
+
+<ResponseField name="timestamp" type="string" required>
+  ISO 8601 UTC timestamp of when the request was received and processed by the API server. Example: `"2024-11-01T12:00:00.000Z"`.
+</ResponseField>
+
+<ResponseField name="error_code" type="integer" required>
+  A numeric status code for the request outcome. `0` means success. Any non-zero value indicates an error — refer to `error_message` for a human-readable explanation. Common codes: `1001` (API key missing), `1002` (invalid key), `1006` (subscription plan inactive), `1008` (plan limit reached).
+</ResponseField>
+
+<ResponseField name="error_message" type="string | null" required>
+  A human-readable description of the error when `error_code` is non-zero. Returns `null` on success. Always log this field when handling errors — it contains the precise reason for failure.
+</ResponseField>
+
+<ResponseField name="elapsed" type="integer" required>
+  The number of milliseconds the API server spent processing your request, measured server-side. Useful for diagnosing latency issues and distinguishing slow server-side queries from network round-trip time.
+</ResponseField>
+
+<ResponseField name="credit_count" type="integer" required>
+  The number of API credits consumed by this specific call. Track this field across responses to monitor your monthly credit burn rate. Some endpoints consume more than 1 credit depending on the number of assets or data points returned.
+</ResponseField>
+
+<ResponseField name="notice" type="string | null">
+  An optional informational message from CoinMarketCap — for example, a deprecation notice for an endpoint you are using, or a note about scheduled maintenance. Returns `null` when there is nothing to communicate.
+</ResponseField>
+
+## Successful Response
+
+A successful response has `status.error_code === 0`, `status.error_message === null`, and a populated `data` field. The shape of `data` varies by endpoint — it may be a single object (for single-asset queries) or a list/map (for listing endpoints).
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-01T12:00:00.000Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 12,
+    "credit_count": 1,
+    "notice": null
+  },
+  "data": {
+    "1": {
+      "id": 1,
+      "name": "Bitcoin",
+      "symbol": "BTC",
+      "slug": "bitcoin",
+      "circulating_supply": 19770000,
+      "total_supply": 19770000,
+      "max_supply": 21000000,
+      "last_updated": "2024-11-01T11:59:00.000Z",
+      "quote": {
+        "USD": {
+          "price": 67432.18,
+          "volume_24h": 28419304823.45,
+          "volume_change_24h": 12.34,
+          "percent_change_1h": 0.23,
+          "percent_change_24h": -1.87,
+          "percent_change_7d": 4.51,
+          "market_cap": 1327849234012.00,
+          "market_cap_dominance": 52.41,
+          "fully_diluted_market_cap": 1416076980000.00,
+          "last_updated": "2024-11-01T11:59:00.000Z"
+        }
+      }
+    }
+  }
+}
+```
+
+<Note>
+  On endpoints that return data for multiple assets (e.g., `/v2/cryptocurrency/quotes/latest?id=1,1027`), the `data` field is a map keyed by CMC ID string. Always iterate by key rather than assuming array ordering.
+</Note>
+
+## Error Response
+
+When a request fails, the HTTP status code will be non-`200` **and** `status.error_code` will be non-zero. The `data` field will be absent or `null`. Always check `error_code` programmatically rather than relying solely on the HTTP status code — some client errors return a `200` HTTP status with a non-zero `error_code` inside the envelope.
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-01T12:00:00.000Z",
+    "error_code": 1001,
+    "error_message": "This API Key is invalid.",
+    "elapsed": 3,
+    "credit_count": 0,
+    "notice": null
+  }
+}
+```
+
+Common error codes and their meaning:
+
+| `error_code` | HTTP Status | Meaning |
+|-------------|-------------|---------|
+| `0` | 200 | Success |
+| `1001` | 401 | API key missing from request |
+| `1002` | 401 | API key invalid or revoked |
+| `1006` | 403 | Subscription plan inactive or expired |
+| `1007` | 403 | Endpoint not available on your current plan |
+| `1008` | 429 | Monthly or minute-level credit limit reached |
+| `1009` | 400 | Request parameter validation failed |
+| `1010` | 500 | Internal server error — retry with backoff |
+
+<Warning>
+  A `credit_count` of `0` in an error response means you were **not charged** for the failed request. Credits are only deducted for successful responses (`error_code: 0`).
+</Warning>
+
+## Pagination Fields
+
+List-based endpoints (such as `/v1/cryptocurrency/listings/latest`) include additional metadata fields at the top level of the response alongside `status` and `data`:
+
+<ResponseField name="total_count" type="integer">
+  The total number of assets matching your query filters, regardless of the `limit` parameter. Use this to calculate the number of pages needed to retrieve the full result set.
+</ResponseField>
+
+<ResponseField name="num_market_pairs" type="integer">
+  Present on asset detail responses. The total number of active trading pairs for the asset across all tracked exchanges.
+</ResponseField>
+
+Use `total_count` together with the `start` and `limit` pagination parameters to iterate through a complete dataset:
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-01T12:00:00.000Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 27,
+    "credit_count": 1,
+    "notice": null
+  },
+  "data": [
+    {
+      "id": 1,
+      "name": "Bitcoin",
+      "symbol": "BTC",
+      "slug": "bitcoin",
+      "cmc_rank": 1,
+      "num_market_pairs": 1083,
+      "circulating_supply": 19770000,
+      "total_supply": 19770000,
+      "max_supply": 21000000,
+      "last_updated": "2024-11-01T11:59:00.000Z",
+      "quote": {
+        "USD": {
+          "price": 67432.18,
+          "volume_24h": 28419304823.45,
+          "percent_change_1h": 0.23,
+          "percent_change_24h": -1.87,
+          "percent_change_7d": 4.51,
+          "market_cap": 1327849234012.00,
+          "last_updated": "2024-11-01T11:59:00.000Z"
+        }
+      }
+    }
+  ],
+  "total_count": 10247
+}
+```
+
+In this example, `total_count: 10247` tells you there are 10,247 assets matching the query. With `limit=100` (the default), you would need 103 pages to retrieve them all — or a single call with `limit=5000` followed by two smaller pages.

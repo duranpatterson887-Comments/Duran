@@ -1,17 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
+  "projectType": "api-service",
+  "projectName": "CoinMarketCap",
+  "projectDescription": "The world's most-referenced cryptocurrency data platform, providing real-time and historical market data, rankings, DEX analytics, and AI-powered tools via a professional REST API.",
   "theme": "luma",
-  "name": "CoinMarketCap",
-  "colors": {
-    "primary": "#ef7025",
-    "light": "#eec9bc",
-    "dark": "#4fa1ab"
-  },
-  "favicon": "/favicon.svg",
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
+  "primaryColor": "#ef7025",
+  "lightColor": "#eec9bc",
+  "darkColor": "#4fa1ab",
   "navigation": {
     "tabs": [
       {
@@ -116,23 +110,36 @@
       }
     ]
   },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:support@coinmarketcap.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Get API Key",
-      "href": "https://pro.coinmarketcap.com/signup"
-    }
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/CoinMarketCap",
-      "github": "https://github.com/coinmarketcap"
-    }
-  }
+  "keyFeatures": [
+    "Real-time and historical cryptocurrency price data (50M+ tokens, 940+ exchanges)",
+    "DEX analytics — on-chain prices, pools, swaps, liquidity, top traders",
+    "WebSocket streaming for real-time price, K-Line, holder, and pool events",
+    "x402 pay-per-request protocol — no API key needed, $0.01 USDC per call",
+    "MCP server for AI-native integration with Cursor, Claude Code, and Windsurf",
+    "Global market metrics — Fear & Greed Index, Altcoin Season Index, CMC 20/100",
+    "Real World Assets (RWA) token tracking and issuer data",
+    "7 pricing tiers from free Keyless to Enterprise with 30M+ credits/mo"
+  ],
+  "publicApiSurface": [
+    "GET /v1/cryptocurrency/listings/latest",
+    "GET /v2/cryptocurrency/quotes/latest",
+    "GET /v2/cryptocurrency/info",
+    "GET /v3/cryptocurrency/quotes/historical",
+    "GET /v1/cryptocurrency/ohlcv/historical",
+    "GET /v1/exchange/listings/latest",
+    "GET /v1/exchange/quotes/latest",
+    "GET /v1/global-metrics/quotes/latest",
+    "GET /v1/global-metrics/quotes/historical",
+    "GET /v4/dex/pairs/quotes/latest",
+    "GET /v4/dex/spot-pairs/latest",
+    "GET /v4/dex/tokens/quotes/latest",
+    "GET /v4/dex/pools/ohlcv/historical",
+    "GET /v1/community/trending/token",
+    "GET /v1/content/posts/top",
+    "GET /v1/index/cmc20/latest",
+    "GET /v1/rwa/listings/latest",
+    "GET /x402/v3/cryptocurrency/quotes/latest",
+    "WSS wss://push.coinmarketcap.com/ws (WebSocket streams)",
+    "MCP mcp.coinmarketcap.com/mcp"
+  ]
 }

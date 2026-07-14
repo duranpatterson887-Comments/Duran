@@ -1,0 +1,133 @@
+---
+title: "Understanding the CoinMarketCap Data Model"
+sidebarTitle: "Data Model"
+description: "Learn how CoinMarketCap structures asset identifiers, price quotes, market data fields, timestamps, and pagination across all API responses."
+---
+
+CoinMarketCap organizes cryptocurrency data around a consistent, well-defined model that applies uniformly across every endpoint. Understanding this model — how assets are identified, how prices are quoted, and how list responses are paginated — is the foundation for building reliable integrations that behave correctly in production from day one.
+
+## Asset Identifiers
+
+Every cryptocurrency and token tracked by CoinMarketCap is addressable through three distinct identifier types. Choosing the right one for your use case prevents subtle bugs, especially in multi-chain environments where the same ticker can refer to entirely different assets.
+
+| Type | Example | Notes |
+|------|---------|-------|
+| CMC ID | `1` | Integer, globally unique, never reassigned |
+| Symbol | `"BTC"` | String, **not unique** — multiple tokens can share a symbol |
+| Slug | `"bitcoin"` | Lowercase URL-friendly string, unique per asset |
+
+**CMC ID** is the preferred identifier for all production integrations. CoinMarketCap assigns a permanent integer ID to each asset when it is first listed. This ID never changes, even if the asset rebrands, changes its ticker symbol, or migrates to a new chain. Bitcoin, for example, always has `id=1`, `symbol="BTC"`, and `slug="bitcoin"`.
+
+**Symbol** is the human-readable ticker (e.g., `BTC`, `ETH`, `USDT`). Symbols are convenient for display purposes but must never be used as a primary key in your data store or API lookups.
+
+**Slug** is the lowercase, hyphenated version of an asset's name as it appears in its CoinMarketCap URL (e.g., `bitcoin`, `ethereum`, `usd-coin`). Slugs are unique and stable, but CMC ID is still preferred because it avoids any string-parsing edge cases.
+
+<Warning>
+  **Symbol ambiguity is a real production risk.** Hundreds of tokens share common symbols — there are dozens of tokens using the symbol `USDT`, `DAI`, or `BTC` across different chains and forks. If you query by symbol and the symbol matches multiple assets, the API returns the result ranked highest by market cap by default. Always resolve symbols to CMC IDs at application startup using the `/v1/cryptocurrency/map` endpoint, then use those IDs for all subsequent calls.
+</Warning>
+
+## Price Data Structure
+
+Price data is returned inside a nested `quote` object. The `quote` object is keyed by currency code, allowing you to request prices in multiple fiat currencies or even in other cryptocurrencies within a single API call using the `convert` parameter.
+
+```json
+"quote": {
+  "USD": {
+    "price": 67432.18,
+    "volume_24h": 28419304823.45,
+    "volume_change_24h": 12.34,
+    "percent_change_1h": 0.23,
+    "percent_change_24h": -1.87,
+    "percent_change_7d": 4.51,
+    "percent_change_30d": 11.02,
+    "percent_change_60d": 22.74,
+    "percent_change_90d": 38.19,
+    "market_cap": 1327849234012.00,
+    "market_cap_dominance": 52.41,
+    "fully_diluted_market_cap": 1416076980000.00,
+    "last_updated": "2024-11-01T12:00:00.000Z"
+  },
+  "EUR": {
+    "price": 62108.55,
+    "volume_24h": 26187200000.00,
+    "...": "..."
+  }
+}
+```
+
+To request quotes in additional currencies, pass the `convert` parameter with a comma-separated list of currency codes or CMC IDs:
+
+```
+GET /v2/cryptocurrency/quotes/latest?id=1&convert=USD,EUR,BTC
+```
+
+This returns a `quote` object with three keys — `USD`, `EUR`, and `BTC` — each containing the full set of price and volume metrics denominated in that currency. Using `convert` is far more efficient than making separate API calls, and it counts as a single credit regardless of how many conversion currencies you request.
+
+## Market Data Fields
+
+The following fields appear in the `quote` object for each conversion currency and represent the core market metrics for an asset:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `price` | float | Current spot price in the quoted currency |
+| `volume_24h` | float | Total trading volume over the trailing 24 hours |
+| `volume_change_24h` | float | Percentage change in 24h volume vs the prior 24h period |
+| `market_cap` | float | Price × circulating supply |
+| `market_cap_dominance` | float | Asset's share of total crypto market cap (%) |
+| `fully_diluted_market_cap` | float | Price × max supply (or total supply if max supply is null) |
+| `percent_change_1h` | float | Price change over the trailing 1 hour (%) |
+| `percent_change_24h` | float | Price change over the trailing 24 hours (%) |
+| `percent_change_7d` | float | Price change over the trailing 7 days (%) |
+| `percent_change_30d` | float | Price change over the trailing 30 days (%) |
+
+The following supply fields appear at the top level of each asset object, outside the `quote` block, because they are currency-independent:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `circulating_supply` | float | Coins currently in public circulation |
+| `total_supply` | float | Total coins in existence (minus burned coins) |
+| `max_supply` | float\|null | Maximum coins that will ever exist; `null` if uncapped |
+
+<Note>
+  `market_cap` is calculated using `circulating_supply`, not `total_supply` or `max_supply`. This is the industry-standard methodology and reflects the value of tokens actually available in the market.
+</Note>
+
+## Timestamps
+
+All timestamps in CoinMarketCap API responses are expressed in **ISO 8601 format in UTC**, for example:
+
+```
+2024-11-01T12:00:00.000Z
+```
+
+The trailing `Z` denotes UTC (zero offset from UTC). When storing timestamps in your database, preserve the full ISO 8601 string or convert to a UTC-aware datetime type — never strip the timezone information. The `last_updated` field on each quote reflects the most recent time that asset's price data was refreshed from exchange feeds.
+
+<Tip>
+  Parse timestamps with a library that natively handles ISO 8601 UTC, such as Python's `datetime.fromisoformat()`, JavaScript's `new Date()`, or Go's `time.Parse(time.RFC3339, ...)`. Avoid manual string parsing — it breaks on leap seconds and daylight saving edge cases.
+</Tip>
+
+## Pagination
+
+List endpoints such as `/v1/cryptocurrency/listings/latest` support two parameters for paginating through large result sets:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `start` | integer | `1` | 1-based index of the first result to return |
+| `limit` | integer | `100` | Number of results to return in this page |
+
+The maximum value of `limit` is **5,000 results per call**. To retrieve results 101–200, set `start=101&limit=100`. To fetch the top 5,000 assets by market cap in a single call, set `start=1&limit=5000`.
+
+```
+# Page 1: ranks 1–100
+GET /v1/cryptocurrency/listings/latest?start=1&limit=100
+
+# Page 2: ranks 101–200
+GET /v1/cryptocurrency/listings/latest?start=101&limit=100
+
+# All top 500 in one call
+GET /v1/cryptocurrency/listings/latest?start=1&limit=500
+```
+
+<Info>
+  Credits are consumed per API call, not per result. Fetching 5,000 results in one call costs the same number of credits as fetching 1 result. When you need large datasets, always maximize `limit` to minimize both credit consumption and total request latency.
+</Info>

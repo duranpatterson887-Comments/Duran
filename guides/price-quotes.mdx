@@ -1,0 +1,226 @@
+---
+title: "Fetch Live Cryptocurrency Price Quotes"
+sidebarTitle: "Price Quotes"
+description: "Query real-time prices, market caps, and volume for any cryptocurrency using the CoinMarketCap REST API in seconds."
+---
+
+Fetching live cryptocurrency prices is the most common starting point for any trading tool, portfolio tracker, or market dashboard. The `/v2/cryptocurrency/quotes/latest` endpoint gives you real-time price data — including market cap, 24-hour volume, and percentage changes — for any asset in your target fiat or crypto currency. Whether you're pricing a single coin or monitoring hundreds at once, a single authenticated request is all it takes.
+
+## Fetch a Single Asset Price
+
+Send a `GET` request with your asset's symbol or CoinMarketCap ID. The response contains a rich `quote` object with price, volume, and market cap data.
+
+<CodeGroup>
+
+```bash curl
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest?symbol=BTC"
+```
+
+```python Python
+import requests
+
+url = "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest"
+headers = {"X-CMC_PRO_API_KEY": "YOUR_API_KEY"}
+params = {"symbol": "BTC"}
+
+response = requests.get(url, headers=headers, params=params)
+data = response.json()
+
+btc = data["data"]["BTC"][0]
+price = btc["quote"]["USD"]["price"]
+print(f"BTC price: ${price:,.2f}")
+```
+
+</CodeGroup>
+
+The `convert` parameter controls which currency the price is expressed in. It defaults to `USD` but accepts any ISO 4217 fiat code or CoinMarketCap cryptocurrency symbol. For example, passing `convert=EUR` returns the price in euros, and `convert=ETH` returns the price denominated in Ether.
+
+```bash
+# Price in Japanese Yen
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest?symbol=BTC&convert=JPY"
+```
+
+---
+
+## Fetch Multiple Assets in One Call
+
+Pass a comma-separated list of symbols or CoinMarketCap IDs to retrieve quotes for many assets in a single round-trip. This dramatically reduces API credit consumption compared to making individual requests.
+
+<CodeGroup>
+
+```bash curl (symbols)
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest?symbol=BTC,ETH,SOL"
+```
+
+```bash curl (IDs)
+# BTC=1, ETH=1027, SOL=5426
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest?id=1,1027,5426"
+```
+
+</CodeGroup>
+
+Using numeric IDs (`?id=`) is more reliable than symbols because symbols can be ambiguous — multiple tokens may share the same ticker. Use the `/v1/cryptocurrency/map` endpoint to look up the canonical ID for any asset.
+
+<Tip>
+  You can batch up to **100 symbols or IDs** in a single request. Batching is the most efficient way to power a multi-asset dashboard — one call for 100 coins consumes 1 API credit, the same as a single-asset request.
+</Tip>
+
+---
+
+## Convert to Any Currency
+
+The `convert` parameter accepts a comma-separated list of up to **120 currencies** — mix fiat and crypto freely. The response will include a separate `quote` object for each requested currency.
+
+```bash
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest?symbol=BTC&convert=EUR,GBP,ETH"
+```
+
+The response nests quotes under each currency key:
+
+```json
+{
+  "data": {
+    "BTC": [{
+      "quote": {
+        "EUR": { "price": 87432.10, ... },
+        "GBP": { "price": 74891.55, ... },
+        "ETH": { "price": 29.84, ... }
+      }
+    }]
+  }
+}
+```
+
+**Popular `convert` values:**
+
+| Code | Description |
+|------|-------------|
+| `USD` | US Dollar (default) |
+| `EUR` | Euro |
+| `GBP` | British Pound |
+| `JPY` | Japanese Yen |
+| `AUD` | Australian Dollar |
+| `CAD` | Canadian Dollar |
+| `CHF` | Swiss Franc |
+| `BTC` | Bitcoin |
+| `ETH` | Ethereum |
+| `BNB` | BNB Chain |
+| `USDT` | Tether (stablecoin baseline) |
+
+---
+
+## Key Response Fields
+
+Every `quote` object contains the following fields. Understanding these helps you build accurate portfolio valuations and market-aware investment tools.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `price` | float | Current price in the requested convert currency |
+| `volume_24h` | float | Total trading volume across all exchanges in the last 24 hours |
+| `percent_change_24h` | float | Price change percentage over the last 24 hours |
+| `percent_change_7d` | float | Price change percentage over the last 7 days |
+| `market_cap` | float | Market capitalisation: price × circulating supply |
+| `circulating_supply` | float | Number of coins currently in public circulation |
+| `market_cap_dominance` | float | Asset's share of total global crypto market cap (%) |
+| `last_updated` | string | ISO 8601 timestamp of the most recent price update |
+
+---
+
+## Practical Example: Portfolio Value Tracker
+
+The function below takes a dictionary mapping ticker symbols to the quantities you hold, fetches live prices in a single batched call, and returns your total portfolio value in USD along with a per-asset breakdown.
+
+```python Python
+import requests
+from typing import Dict
+
+API_KEY = "YOUR_API_KEY"
+BASE_URL = "https://pro-api.coinmarketcap.com"
+
+def get_portfolio_value(holdings: Dict[str, float]) -> dict:
+    """
+    Calculate live USD portfolio value for a set of crypto holdings.
+
+    Args:
+        holdings: dict mapping symbol -> quantity, e.g. {"BTC": 0.5, "ETH": 4.0, "SOL": 20}
+
+    Returns:
+        dict with total_usd and a per-asset breakdown
+    """
+    symbols = ",".join(holdings.keys())
+
+    response = requests.get(
+        f"{BASE_URL}/v2/cryptocurrency/quotes/latest",
+        headers={"X-CMC_PRO_API_KEY": API_KEY},
+        params={"symbol": symbols, "convert": "USD"},
+    )
+    response.raise_for_status()
+    data = response.json()["data"]
+
+    breakdown = {}
+    total_usd = 0.0
+
+    for symbol, quantity in holdings.items():
+        if symbol not in data:
+            print(f"Warning: {symbol} not found in response")
+            continue
+
+        # CoinMarketCap may return multiple tokens with the same symbol;
+        # index 0 is always the highest-ranked (most liquid) asset.
+        asset = data[symbol][0]
+        price = asset["quote"]["USD"]["price"]
+        change_24h = asset["quote"]["USD"]["percent_change_24h"]
+        value = price * quantity
+
+        breakdown[symbol] = {
+            "quantity": quantity,
+            "price_usd": price,
+            "value_usd": value,
+            "change_24h_pct": change_24h,
+        }
+        total_usd += value
+
+    return {
+        "total_usd": total_usd,
+        "assets": breakdown,
+    }
+
+
+# Example usage
+if __name__ == "__main__":
+    my_portfolio = {
+        "BTC": 0.5,
+        "ETH": 4.0,
+        "SOL": 20.0,
+    }
+
+    result = get_portfolio_value(my_portfolio)
+
+    print(f"\nTotal Portfolio Value: ${result['total_usd']:,.2f}\n")
+    for symbol, info in result["assets"].items():
+        change = info["change_24h_pct"]
+        direction = "▲" if change >= 0 else "▼"
+        print(
+            f"  {symbol}: {info['quantity']} × ${info['price_usd']:,.2f} "
+            f"= ${info['value_usd']:,.2f}  {direction} {abs(change):.2f}% (24h)"
+        )
+```
+
+Sample output:
+
+```
+Total Portfolio Value: $198,432.10
+
+  BTC: 0.5 × $184,210.00 = $92,105.00  ▲ 2.34% (24h)
+  ETH: 4.0 × $3,521.80 = $14,087.20  ▼ 0.87% (24h)
+  SOL: 20.0 × $146.20 = $2,924.00  ▲ 5.61% (24h)
+```
+
+<Note>
+  Price data refreshes every **60 seconds** on Basic and Builder plans. Upgrading to **Startup or above** unlocks real-time price streaming with sub-second latency. For latency-sensitive applications such as trading bots or live dashboards, consider pairing REST polling with the [WebSocket streaming API](/guides/websocket-streaming).
+</Note>

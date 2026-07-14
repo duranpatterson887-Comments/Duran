@@ -1,0 +1,243 @@
+---
+title: "Historical Quotes — Time Series Price Data"
+sidebarTitle: "Historical"
+description: "Access CoinMarketCap's full price history for any cryptocurrency — from daily OHLCV candles to 5-minute intraday ticks — for backtesting and analysis."
+---
+
+The historical quotes endpoint gives you access to CoinMarketCap's complete time-series price archive for any tracked cryptocurrency. Whether you are backtesting a trading strategy, building charting tools, running academic research, or computing custom performance metrics, this endpoint delivers price, volume, and market cap snapshots at whatever granularity your plan supports — from 5-minute ticks all the way to yearly aggregates.
+
+## Endpoint
+
+```
+GET /v3/cryptocurrency/quotes/historical
+```
+
+## Parameters
+
+You must supply at least one of `id`, `symbol`, or `slug`.
+
+<ParamField query="id" type="string">
+  The CoinMarketCap cryptocurrency ID. Example: `"1"` for Bitcoin. Preferred over `symbol` for unambiguous lookups.
+</ParamField>
+
+<ParamField query="symbol" type="string">
+  The ticker symbol of the asset. Example: `"BTC"`. If multiple assets share a symbol, the one with the highest market cap is returned.
+</ParamField>
+
+<ParamField query="slug" type="string">
+  The URL-friendly slug. Example: `"bitcoin"`.
+</ParamField>
+
+<ParamField query="time_start" type="string">
+  The start of the requested time range. Accepts an ISO 8601 datetime string (e.g., `"2024-01-01T00:00:00Z"`) or a Unix timestamp in seconds (e.g., `1704067200`). Required for bounded queries; omit to begin from the earliest available data.
+</ParamField>
+
+<ParamField query="time_end" type="string">
+  The end of the requested time range. Accepts the same formats as `time_start`. Defaults to the current time if omitted.
+</ParamField>
+
+<ParamField query="count" type="integer">
+  The number of data points to return within the time range. Accepts values from `1` to `10000`. Defaults to `10`. The actual timestamps are distributed evenly across the range at the resolution set by `interval`.
+</ParamField>
+
+<ParamField query="interval" type="string">
+  The granularity of each data point. Available values:
+
+  | Value | Description |
+  |-------|-------------|
+  | `5m` | Every 5 minutes |
+  | `10m` | Every 10 minutes |
+  | `15m` | Every 15 minutes |
+  | `30m` | Every 30 minutes |
+  | `1h` | Hourly |
+  | `2h` | Every 2 hours |
+  | `6h` | Every 6 hours |
+  | `12h` | Every 12 hours |
+  | `24h` or `daily` | Daily |
+  | `weekly` | Weekly |
+  | `monthly` | Monthly |
+  | `yearly` | Yearly |
+  | `all-time` | Highest-resolution all-time series |
+
+  Intraday intervals (`5m` through `12h`) require a Startup plan or above. See the plan table below.
+</ParamField>
+
+<ParamField query="convert" type="string">
+  A comma-separated list of fiat or cryptocurrency symbols for quote conversion. Defaults to `USD`. Each additional currency costs 1 extra credit per call.
+</ParamField>
+
+<ParamField query="aux" type="string">
+  Comma-separated list of additional fields to include in each data point. Available options: `price_usd`, `volume`, `market_cap`, `quote_timestamp`, `is_active`, `is_fiat`. Include only what you need to keep response payloads manageable.
+</ParamField>
+
+<ParamField query="skip_invalid" type="boolean">
+  When `true`, invalid or unrecognised asset identifiers are silently skipped rather than causing the entire request to fail. Defaults to `false`.
+</ParamField>
+
+## Plan Requirements
+
+The intervals and history depth available to you depend on your subscription tier:
+
+| Plan | History Depth | Minimum Interval |
+|------|--------------|------------------|
+| **Basic (Free)** | Up to 1 year of quotes history | `daily` only |
+| **Builder** | Up to 3 years daily; up to 1 month intraday | `1h` |
+| **Startup+** | All-time history; up to 12 months intraday | `5m` |
+
+Upgrade your plan at [pro.coinmarketcap.com](https://pro.coinmarketcap.com/signup) to unlock longer histories and finer granularities.
+
+## Response Fields
+
+<ResponseField name="data" type="object">
+  Contains the asset metadata and an array of historical quote points.
+
+  <Expandable title="Response object fields">
+    <ResponseField name="id" type="integer">
+      The CoinMarketCap asset ID.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The full asset name.
+    </ResponseField>
+    <ResponseField name="symbol" type="string">
+      The ticker symbol.
+    </ResponseField>
+    <ResponseField name="quotes" type="array">
+      An ordered array of historical data point objects.
+
+      <Expandable title="Data point fields">
+        <ResponseField name="timestamp" type="string">
+          ISO 8601 UTC timestamp for this data point.
+        </ResponseField>
+        <ResponseField name="quote" type="object">
+          A map of conversion-currency keys to quote snapshots at this timestamp.
+
+          <Expandable title="Quote snapshot fields">
+            <ResponseField name="price" type="number">
+              Asset price in the target currency at this timestamp.
+            </ResponseField>
+            <ResponseField name="volume_24h" type="number">
+              24-hour rolling trading volume at this timestamp.
+            </ResponseField>
+            <ResponseField name="market_cap" type="number">
+              Market capitalisation at this timestamp.
+            </ResponseField>
+            <ResponseField name="timestamp" type="string">
+              ISO 8601 UTC timestamp when this specific quote was recorded.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL — daily BTC last 30 days
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v3/cryptocurrency/quotes/historical\
+?id=1\
+&time_start=2024-10-15T00:00:00Z\
+&time_end=2024-11-15T00:00:00Z\
+&interval=daily\
+&count=30\
+&convert=USD"
+```
+
+```python Python — daily BTC last 30 days
+import requests
+from datetime import datetime, timedelta, timezone
+
+API_KEY = "YOUR_API_KEY"
+BASE_URL = "https://pro-api.coinmarketcap.com"
+
+end = datetime.now(timezone.utc)
+start = end - timedelta(days=30)
+
+url = f"{BASE_URL}/v3/cryptocurrency/quotes/historical"
+headers = {"X-CMC_PRO_API_KEY": API_KEY}
+params = {
+    "id": "1",                              # Bitcoin
+    "time_start": start.isoformat(),
+    "time_end": end.isoformat(),
+    "interval": "daily",
+    "count": 30,
+    "convert": "USD",
+}
+
+response = requests.get(url, headers=headers, params=params, timeout=15)
+response.raise_for_status()
+
+payload = response.json()
+quotes = payload["data"]["quotes"]
+
+for point in quotes:
+    price = point["quote"]["USD"]["price"]
+    ts = point["timestamp"]
+    print(f"{ts[:10]}  ${price:,.2f}")
+```
+
+</CodeGroup>
+
+## Example Response (abbreviated)
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-15T16:00:00.000Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 38,
+    "credit_count": 1,
+    "notice": null
+  },
+  "data": {
+    "id": 1,
+    "name": "Bitcoin",
+    "symbol": "BTC",
+    "is_active": 1,
+    "is_fiat": 0,
+    "quotes": [
+      {
+        "timestamp": "2024-10-15T00:00:00.000Z",
+        "quote": {
+          "USD": {
+            "price": 65412.33,
+            "volume_24h": 29876543210.00,
+            "market_cap": 1288467980000.0,
+            "timestamp": "2024-10-15T00:00:00.000Z"
+          }
+        }
+      },
+      {
+        "timestamp": "2024-10-16T00:00:00.000Z",
+        "quote": {
+          "USD": {
+            "price": 67021.88,
+            "volume_24h": 31234567890.00,
+            "market_cap": 1320231440000.0,
+            "timestamp": "2024-10-16T00:00:00.000Z"
+          }
+        }
+      },
+      {
+        "timestamp": "2024-11-15T00:00:00.000Z",
+        "quote": {
+          "USD": {
+            "price": 91245.82,
+            "volume_24h": 38412876543.21,
+            "market_cap": 1804824712580.0,
+            "timestamp": "2024-11-15T00:00:00.000Z"
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+<Note>
+  Intraday intervals (`5m`, `10m`, `15m`, `30m`, `1h`, `2h`, `6h`, `12h`) are only available on **Startup plan and above**. Requests for intraday data on a Basic or Builder plan will return an error with `error_code 1006` (subscription plan insufficient). Upgrade at [pro.coinmarketcap.com](https://pro.coinmarketcap.com/signup) to unlock granular tick data.
+</Note>

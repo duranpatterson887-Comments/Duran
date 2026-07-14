@@ -1,0 +1,72 @@
+---
+title: "CoinMarketCap API Changelog & Version History"
+sidebarTitle: "Changelog"
+description: "Track CoinMarketCap API version history, new endpoint releases, protocol upgrades, and the latest platform feature additions."
+---
+
+The CoinMarketCap API has evolved continuously since its launch, expanding from a simple listings endpoint into a comprehensive financial data platform covering spot markets, DEX on-chain data, WebSocket streams, and AI-native integrations. This page summarizes what changed in each major version and highlights recent additions.
+
+<Note>
+  All previous API versions remain fully available for backward compatibility. Existing integrations built on v1, v2, or v3 continue to work without modification. Upgrading to a newer version is opt-in and recommended only when you want to access new capabilities.
+</Note>
+
+## API v4 (Current)
+
+API v4 is the current recommended version and the foundation for all new endpoint development. It introduces CoinMarketCap's most significant platform expansion to date.
+
+**What's new in v4:**
+
+- **DEX endpoints** — Query decentralized exchange pairs, liquidity pools, on-chain token data, and DEX holder analytics across major chains.
+- **On-chain data** — Access token contract metadata, wallet holder distributions, and chain-specific market metrics.
+- **x402 pay-per-request** — Call the API with no account or API key using the x402 protocol; micro-payments are deducted per request.
+- **WebSocket streams** — Subscribe to real-time price and volume updates pushed directly to your client over a persistent connection.
+- **MCP server** — AI-native integration at `mcp.coinmarketcap.com/mcp` for use with Cursor, Claude Code, Windsurf, and other MCP-compatible AI tools.
+
+## API v3
+
+API v3 focused on depth and precision for data-intensive applications.
+
+**Key additions in v3:**
+
+- Enhanced historical data endpoints with finer granularity and longer lookback windows.
+- Expanded quote endpoints supporting bulk symbol lookups in a single request.
+- Improved pagination using `start` and `limit` parameters across listing endpoints.
+- Additional metadata fields on cryptocurrency objects, including tag arrays and platform contract addresses.
+
+## API v2
+
+API v2 introduced multi-asset support and expanded the exchange data offering.
+
+**Key additions in v2:**
+
+- `/v2/cryptocurrency/quotes/latest` — Multi-coin quote lookups returning data for many assets in one call, replacing the single-asset v1 endpoint.
+- Exchange data improvements — listing, metadata, and market pair endpoints for centralized exchanges.
+- Expanded `convert` parameter support for fiat and crypto conversion across quote endpoints.
+- Introduction of the CMC ID system as the canonical identifier for all assets and exchanges.
+
+## API v1 (Original)
+
+API v1 established the core data model and the endpoints that made CoinMarketCap the reference data source for the industry.
+
+**Original v1 endpoints:**
+
+- `/v1/cryptocurrency/listings/latest` — Paginated ranked list of all cryptocurrencies by market cap.
+- `/v1/global-metrics/quotes/latest` — Total market cap, BTC dominance, active cryptocurrencies count.
+- `/v1/exchange/listings/latest` — Ranked exchange listings with volume data.
+- `/v1/tools/price-conversion` — Currency conversion utility across fiat and crypto.
+
+---
+
+## Recent Highlights
+
+The following features shipped as part of ongoing v4 development and are available now:
+
+- **x402 protocol launch** — Pay-per-request access with no account or API key required, powered by the x402 open payment standard.
+- **MCP server** — AI-native market data integration for IDE-based AI assistants via the Model Context Protocol.
+- **DEX Holders endpoints** — On-chain holder analysis including wallet concentration, distribution curves, and holder change over time.
+- **Altcoin Season Index API** — Programmatic access to the popular Altcoin Season Index, enabling applications to read the current market cycle indicator in real time.
+- **Real World Assets (RWA) tracking** — Dedicated category and metadata support for tokenized real-world assets including treasury bills, real estate, and commodities.
+
+---
+
+For the complete versioned endpoint reference including request parameters, response schemas, and code examples, see the [official API documentation](https://coinmarketcap.com/api/documentation/v1/).

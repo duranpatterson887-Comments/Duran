@@ -1,0 +1,121 @@
+---
+title: "API Error Codes & HTTP Status Handling"
+sidebarTitle: "Errors"
+description: "Understand CoinMarketCap's dual-layer error signaling — HTTP status codes plus the status.error_code field — and learn how to handle failures gracefully."
+---
+
+CoinMarketCap signals errors at two levels: the HTTP status code of the response, and the `error_code` field inside the `status` envelope. You should check both. A `200 OK` response can still carry a non-zero `error_code` in rare edge cases, and a `400` or `401` will always include an informative `error_message` string in the envelope. Building your error-handling logic around both layers gives you the most robust integration.
+
+## HTTP Status Codes
+
+| Code | Name | Meaning |
+|------|------|---------|
+| `200` | Success | The request was processed successfully. Check `error_code` for any soft errors. |
+| `400` | Bad Request | One or more request parameters are invalid or missing. Inspect `error_message` for details. |
+| `401` | Unauthorized | Your API key is missing or invalid. Verify the `X-CMC_PRO_API_KEY` header value. |
+| `402` | Payment Required | This endpoint or feature requires a paid subscription or additional credits. |
+| `403` | Forbidden | Your current plan does not include access to this endpoint. Upgrade to unlock it. |
+| `429` | Too Many Requests | You have exceeded your rate limit. Back off and retry after the window resets. |
+| `500` | Internal Server Error | An unexpected error occurred on CoinMarketCap's servers. Retry with exponential backoff. |
+
+## Error Codes (`error_code` field)
+
+The `error_code` field in the `status` object provides a fine-grained classification beyond HTTP status codes. Always branch your application logic on this value rather than parsing the human-readable `error_message` string.
+
+| Code | Meaning |
+|------|---------|
+| `0` | **Success** — no error. |
+| `400` | **Bad request** — one or more query parameters are invalid or malformed. |
+| `401` | **API key invalid or missing** — the supplied key does not match any active account. |
+| `402` | **Payment required** — the requested resource requires a paid plan or credit top-up. |
+| `403` | **Forbidden** — your subscription plan does not include this endpoint or feature. |
+| `404` | **Not found** — the requested resource (e.g., a specific coin ID) does not exist. |
+| `429` | **Rate limit exceeded** — you have sent too many requests in a short window. |
+| `500` | **Server error** — an internal CoinMarketCap error; not caused by your request. |
+| `1001` | **API key missing** — no API key was supplied in the header or query parameter. |
+| `1002` | **API key invalid** — the key was supplied but does not match a valid account. |
+| `1003` | **API key required** — this endpoint is not accessible on the free tier; an API key is required. |
+| `1004` | **IP not whitelisted** — your IP address is not on the allow-list configured for this key. |
+| `1005` | **Monthly plan limit exceeded** — you have consumed all credits in your current billing cycle. |
+| `1006` | **Subscription plan insufficient** — this endpoint requires a higher-tier subscription. |
+| `1007` | **API key disabled** — your key has been administratively disabled; contact support. |
+| `1008` | **Endpoint frequency limit reached** — you have hit the per-endpoint call-frequency limit for your plan. |
+
+## Error Response Example
+
+The following shows a typical error response when an invalid API key is supplied. Note that the HTTP status is `401` and `error_code` mirrors it, while `data` is `null`.
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-15T12:34:56.789Z",
+    "error_code": 401,          // Non-zero: something went wrong
+    "error_message": "This API Key is invalid.",  // Human-readable detail
+    "elapsed": 2,
+    "credit_count": 0,          // No credits consumed on auth failure
+    "notice": null
+  },
+  "data": null                  // Always null when error_code != 0
+}
+```
+
+A plan-limit error (code `1005`) looks slightly different — the HTTP status is `402` and `error_message` tells you when the limit resets:
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-15T23:58:10.123Z",
+    "error_code": 1005,
+    "error_message": "Your monthly credit limit has been reached. It will reset on 2024-12-01.",
+    "elapsed": 1,
+    "credit_count": 0,
+    "notice": null
+  },
+  "data": null
+}
+```
+
+## Handling Errors in Code
+
+The pattern below shows a clean Python approach: check `error_code` first, raise a descriptive exception, and let the caller decide how to recover.
+
+```python
+import requests
+
+API_KEY = "YOUR_API_KEY"
+BASE_URL = "https://pro-api.coinmarketcap.com"
+
+def get_listings(limit: int = 10) -> list:
+    url = f"{BASE_URL}/v1/cryptocurrency/listings/latest"
+    headers = {"X-CMC_PRO_API_KEY": API_KEY}
+    params = {"limit": limit}
+
+    response = requests.get(url, headers=headers, params=params, timeout=10)
+
+    # First check the HTTP layer
+    response.raise_for_status()
+
+    payload = response.json()
+    status = payload["status"]
+
+    # Then check the envelope error_code
+    if status["error_code"] != 0:
+        raise RuntimeError(
+            f"CMC API error {status['error_code']}: {status['error_message']}"
+        )
+
+    return payload["data"]
+
+try:
+    coins = get_listings(limit=5)
+    for coin in coins:
+        print(coin["name"], coin["quote"]["USD"]["price"])
+except requests.HTTPError as e:
+    print(f"HTTP error: {e}")
+except RuntimeError as e:
+    print(f"API error: {e}")
+```
+
+<Tip>
+  Log **both** the HTTP status code and `status.error_code` in your error records. When you contact CoinMarketCap support, providing both values — along with the `status.timestamp` — significantly speeds up diagnosis because support engineers can locate the exact server-side transaction.
+</Tip>

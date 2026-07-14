@@ -1,0 +1,80 @@
+---
+title: "CoinMarketCap API — The World's Crypto Data Platform"
+sidebarTitle: "Introduction"
+description: "Access real-time and historical data for 50M+ tokens, 940+ exchanges, DEX analytics, on-chain data, and WebSocket streaming — all through one powerful API."
+---
+
+Welcome to the CoinMarketCap API platform — the most trusted source of cryptocurrency market data on the planet. Whether you're building a trading dashboard, running quantitative research, or embedding live prices into your application, our API gives you the data infrastructure to make smarter, faster investment decisions. With coverage spanning 50M+ tokens, 940+ exchanges, DEX pools, on-chain metrics, and real-time WebSocket streams, everything you need is available through a single, well-documented REST interface.
+
+## Get Started
+
+Jump straight into the resource that matches where you are right now.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Fetch your first live BTC price in under five minutes — no prior setup required.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Learn how to obtain your API key and securely authenticate every request.
+  </Card>
+  <Card title="API Reference" icon="book-open" href="https://coinmarketcap.com/api/documentation/v1/" target="_blank">
+    Browse the full endpoint catalog — quotes, metadata, DEX data, global metrics, and more.
+  </Card>
+  <Card title="Guides" icon="map" href="/guides">
+    Step-by-step tutorials for common use cases, from portfolio tracking to on-chain analytics.
+  </Card>
+</CardGroup>
+
+## Three Steps to Live Data
+
+<Steps>
+  <Step title="Get Your API Key">
+    Create a free account at [pro.coinmarketcap.com/signup](https://pro.coinmarketcap.com/signup). Once registered, your API key is available instantly in the dashboard under **API Keys**. The free Basic plan includes 15,000 credits per month — more than enough to start building.
+  </Step>
+  <Step title="Make Your First Call">
+    Pass your key in the `X-CMC_PRO_API_KEY` header and hit your first endpoint. The `/v2/cryptocurrency/quotes/latest` endpoint returns real-time price, volume, market cap, and percent-change data for any token by symbol or ID.
+
+    ```bash
+    curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+      "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest?symbol=BTC"
+    ```
+  </Step>
+  <Step title="Explore the Full Data Universe">
+    Once the first call succeeds, the entire platform is at your fingertips. Query historical OHLCV data, stream live price ticks via WebSocket, analyse DEX liquidity pools, pull on-chain metrics, or integrate with AI workflows through our MCP server — all from the same base URL: `https://pro-api.coinmarketcap.com`.
+  </Step>
+</Steps>
+
+## Platform Capabilities
+
+CoinMarketCap's API is purpose-built for every layer of the data stack — from rapid prototyping to institutional-grade production systems.
+
+<CardGroup cols={3}>
+  <Card title="Real-Time Market Data" icon="chart-line">
+    Live quotes, order-book depth, and 24 h rolling statistics for every listed asset, updated every 60 seconds on the Basic plan and down to real-time on higher tiers.
+  </Card>
+  <Card title="Historical Data" icon="clock-rotate-left">
+    Tick-level and daily OHLCV history spanning all-time for Professional and Enterprise plans — ideal for backtesting strategies and training ML models.
+  </Card>
+  <Card title="DEX & On-Chain Analytics" icon="link">
+    Pool-level liquidity, swap volumes, and token flows across major decentralised exchanges, enriched with on-chain transaction data.
+  </Card>
+  <Card title="WebSocket Streaming" icon="bolt">
+    Push-based price streams with sub-second latency for Startup plans and above — no polling required, perfect for live trading interfaces.
+  </Card>
+  <Card title="x402 Pay-Per-Request" icon="coins">
+    Call any endpoint without an API key using the x402 protocol. Pay $0.01 USDC per request on-chain — ideal for serverless and AI-agent workflows.
+  </Card>
+  <Card title="MCP Server" icon="robot">
+    Integrate CoinMarketCap data directly into AI assistants and agent pipelines via the Model Context Protocol server — no custom glue code needed.
+  </Card>
+</CardGroup>
+
+## Base URL
+
+All API requests target a single base URL:
+
+```
+https://pro-api.coinmarketcap.com
+```
+
+Every endpoint is versioned (e.g. `/v1/`, `/v2/`) to ensure backwards compatibility as the platform evolves. The full endpoint reference lives at [coinmarketcap.com/api/documentation/v1/](https://coinmarketcap.com/api/documentation/v1/).

@@ -1,0 +1,280 @@
+---
+title: "Crypto News & Articles — CMC Content API"
+sidebarTitle: "News"
+description: "Embed CoinMarketCap-curated crypto news, community posts, and long-form articles directly into your app with a single API family."
+---
+
+CoinMarketCap curates thousands of crypto news stories, community posts, and long-form editorial articles every day. The Content API gives you programmatic access to that editorial pipeline so you can embed a live, categorized news feed directly into your application — no scraping, no RSS parsing, and no stale caches. Whether you are building a trading terminal, a portfolio tracker, or a research tool, these endpoints keep your users informed with the same content that powers CMC itself.
+
+---
+
+## Top Posts
+
+```
+GET https://pro-api.coinmarketcap.com/v1/content/posts/top
+```
+
+Returns the highest-engagement community and news posts over a rolling window, ranked by interactions (views, reactions, shares).
+
+### Request Parameters
+
+<ParamField query="start" type="integer" default="1">
+  Pagination offset. Use with `limit` to walk through result pages.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="10">
+  Number of posts to return per call. Maximum **100**.
+</ParamField>
+
+<ParamField query="news_type" type="string" default="all">
+  Filter by content origin. Accepted values:
+
+  - `all` — news articles and community posts combined (default)
+  - `news` — third-party and CMC editorial news only
+  - `community` — user-generated community posts only
+</ParamField>
+
+<ParamField query="category" type="string">
+  Topic slug to filter results. Common values include `bitcoin`, `ethereum`, `defi`, `nft`, `layer2`, `regulation`. Leave blank to return content across all categories.
+</ParamField>
+
+---
+
+## Latest Posts
+
+```
+GET https://pro-api.coinmarketcap.com/v1/content/posts/latest
+```
+
+Returns posts in reverse-chronological order, making it ideal for real-time news tickers and live feed widgets.
+
+### Request Parameters
+
+<ParamField query="start" type="integer" default="1">
+  Pagination offset.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="10">
+  Number of posts to return. Maximum **100**.
+</ParamField>
+
+<ParamField query="news_type" type="string" default="all">
+  Filter by content origin: `all`, `news`, or `community`.
+</ParamField>
+
+<ParamField query="category" type="string">
+  Topic slug filter (e.g., `bitcoin`, `ethereum`, `defi`).
+</ParamField>
+
+---
+
+## Posts Response Fields
+
+Both `/posts/top` and `/posts/latest` return the same post object schema.
+
+<ResponseField name="status" type="object">
+  Standard CMC response envelope.
+  <Expandable title="status fields">
+    <ResponseField name="timestamp" type="string">Response generation timestamp (ISO 8601).</ResponseField>
+    <ResponseField name="error_code" type="integer">0 on success.</ResponseField>
+    <ResponseField name="credit_count" type="integer">API credits consumed.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of post objects.
+  <Expandable title="post object fields">
+    <ResponseField name="id" type="string">
+      Unique identifier for the post.
+    </ResponseField>
+    <ResponseField name="title" type="string">
+      Headline or post title.
+    </ResponseField>
+    <ResponseField name="subtitle" type="string">
+      Short summary or deck text displayed beneath the headline.
+    </ResponseField>
+    <ResponseField name="cover_image_url" type="string">
+      URL of the hero image associated with the post.
+    </ResponseField>
+    <ResponseField name="source_url" type="string">
+      Canonical URL of the original article or post.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      Publication timestamp in ISO 8601 format.
+    </ResponseField>
+    <ResponseField name="source" type="object">
+      Attribution metadata for the content publisher.
+      <Expandable title="source fields">
+        <ResponseField name="name" type="string">Display name of the publisher (e.g., `"CoinDesk"`, `"The Block"`).</ResponseField>
+        <ResponseField name="logo_url" type="string">URL of the publisher's logo image.</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Curated Articles
+
+```
+GET https://pro-api.coinmarketcap.com/v1/content/articles
+```
+
+Returns CMC editorial long-form articles with full HTML body content, author metadata, and structured tags — ideal for embedding rich research pieces.
+
+### Request Parameters
+
+<ParamField query="start" type="integer" default="1">
+  Pagination offset.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="10">
+  Number of articles to return per call.
+</ParamField>
+
+<ParamField query="category" type="string">
+  Topic category slug (e.g., `bitcoin`, `altcoins`, `defi`, `nft`, `web3`).
+</ParamField>
+
+<ParamField query="tags" type="string">
+  Comma-separated list of tag slugs to filter by (e.g., `layer2,zk-rollups`).
+</ParamField>
+
+<ParamField query="author" type="string">
+  Filter results to articles written by a specific author slug.
+</ParamField>
+
+### Articles Response Fields
+
+<ResponseField name="data" type="array">
+  Array of article objects.
+  <Expandable title="article object fields">
+    <ResponseField name="id" type="string">
+      Unique article identifier.
+    </ResponseField>
+    <ResponseField name="title" type="string">
+      Article headline.
+    </ResponseField>
+    <ResponseField name="subtitle" type="string">
+      Editorial deck summarizing the article's key argument.
+    </ResponseField>
+    <ResponseField name="cover" type="string">
+      URL of the article's cover image.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      Publication date and time (ISO 8601).
+    </ResponseField>
+    <ResponseField name="authors" type="array">
+      List of author objects with `name` and `avatar_url` fields.
+    </ResponseField>
+    <ResponseField name="tags" type="array">
+      Structured tag list. Each entry contains `slug` and `name` fields for use as filter values in subsequent queries.
+    </ResponseField>
+    <ResponseField name="body" type="string">
+      Full article content as an HTML string. Sanitize before rendering in your UI.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+
+```bash Top Posts — cURL
+curl -s \
+  --url "https://pro-api.coinmarketcap.com/v1/content/posts/top?limit=3&news_type=news&category=bitcoin" \
+  --header "X-CMC_PRO_API_KEY: YOUR_API_KEY"
+```
+
+```bash Latest Posts — cURL
+curl -s \
+  --url "https://pro-api.coinmarketcap.com/v1/content/posts/latest?limit=3&category=defi" \
+  --header "X-CMC_PRO_API_KEY: YOUR_API_KEY"
+```
+
+```bash Articles — cURL
+curl -s \
+  --url "https://pro-api.coinmarketcap.com/v1/content/articles?limit=2&category=defi&tags=layer2" \
+  --header "X-CMC_PRO_API_KEY: YOUR_API_KEY"
+```
+
+```python Python
+import requests
+
+headers = {"X-CMC_PRO_API_KEY": "YOUR_API_KEY"}
+
+# Top posts
+top = requests.get(
+    "https://pro-api.coinmarketcap.com/v1/content/posts/top",
+    headers=headers,
+    params={"limit": 3, "news_type": "news", "category": "bitcoin"}
+)
+
+# Curated articles
+articles = requests.get(
+    "https://pro-api.coinmarketcap.com/v1/content/articles",
+    headers=headers,
+    params={"limit": 2, "category": "defi"}
+)
+
+print(top.json())
+print(articles.json())
+```
+
+</CodeGroup>
+
+### Response — `/v1/content/posts/top`
+
+```json
+{
+  "status": {
+    "timestamp": "2025-01-15T14:45:00.000Z",
+    "error_code": 0,
+    "credit_count": 1
+  },
+  "data": [
+    {
+      "id": "post_9f3a2c",
+      "title": "Bitcoin Surpasses $97,000 as Institutional Inflows Accelerate",
+      "subtitle": "Spot ETF products recorded their largest single-day inflow of 2025 as macro tailwinds push BTC toward six figures.",
+      "cover_image_url": "https://s2.coinmarketcap.com/news/btc-ath-jan2025.jpg",
+      "source_url": "https://www.coindesk.com/markets/2025/01/15/bitcoin-surpasses-97000",
+      "created_at": "2025-01-15T10:12:00.000Z",
+      "source": {
+        "name": "CoinDesk",
+        "logo_url": "https://s2.coinmarketcap.com/static/img/publishers/coindesk.png"
+      }
+    },
+    {
+      "id": "post_b12e7d",
+      "title": "Ethereum Layer 2 TVL Hits Record $65 Billion",
+      "subtitle": "Aggregate TVL across Arbitrum, Optimism, and Base reached an all-time high as DeFi activity rebounds.",
+      "cover_image_url": "https://s2.coinmarketcap.com/news/l2-tvl-record.jpg",
+      "source_url": "https://theblock.co/post/l2-tvl-record-2025",
+      "created_at": "2025-01-15T08:55:00.000Z",
+      "source": {
+        "name": "The Block",
+        "logo_url": "https://s2.coinmarketcap.com/static/img/publishers/theblock.png"
+      }
+    },
+    {
+      "id": "post_c44f1a",
+      "title": "SEC Approves First Spot Solana ETF Applications",
+      "subtitle": "Regulators green-lit three separate applications in a ruling that analysts say broadens the digital-asset ETF landscape.",
+      "cover_image_url": "https://s2.coinmarketcap.com/news/sol-etf-approved.jpg",
+      "source_url": "https://decrypt.co/sol-etf-sec-approval-2025",
+      "created_at": "2025-01-15T07:30:00.000Z",
+      "source": {
+        "name": "Decrypt",
+        "logo_url": "https://s2.coinmarketcap.com/static/img/publishers/decrypt.png"
+      }
+    }
+  ]
+}
+```
+
+<Tip>
+  **Build a focused, high-signal news feed using the `category` filter.** Passing `category=bitcoin` returns BTC-specific news, while `category=defi`, `category=nft`, or `category=regulation` lets you create vertically curated feeds for different user segments. Combine the `category` and `news_type=news` parameters on `/posts/top` to surface only the most-read professional journalism within a topic, keeping community noise out of editorially focused surfaces.
+</Tip>

@@ -1,0 +1,196 @@
+---
+title: "Exchange Listings — Ranked Exchange Data"
+sidebarTitle: "Listings"
+description: "Retrieve all active spot and derivatives exchanges ranked by 24-hour volume, with market pair counts, scores, and optional fiat conversion for benchmarking."
+---
+
+The exchange listings endpoint gives you a comprehensive, paginated directory of every active exchange tracked by CoinMarketCap — ranked by trading volume by default. From high-frequency traders benchmarking execution venues to researchers mapping market structure, this endpoint provides the authoritative snapshot of global exchange activity across spot, derivatives, DEX, and lending markets, all in a single call.
+
+## Endpoint
+
+<ParamField path="GET /v1/exchange/listings/latest" type="string">
+  Retrieve a paginated list of all active exchanges, sorted and filtered by your chosen criteria.
+</ParamField>
+
+**Base URL:** `https://pro-api.coinmarketcap.com`
+
+**Authentication:** Pass your API key in the `X-CMC_PRO_API_KEY` request header.
+
+---
+
+## Request Parameters
+
+<ParamField query="start" type="integer">
+  Pagination offset. Returns results starting from this rank position. Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Number of exchanges to return per page. Minimum `1`, maximum `5000`, default `100`.
+</ParamField>
+
+<ParamField query="sort" type="string">
+  Field by which to sort the results. Accepted values:
+
+  | Value | Description |
+  |-------|-------------|
+  | `volume_24h` | Sort by 24-hour trading volume *(default)* |
+  | `number_of_market_pairs` | Sort by number of active market pairs |
+</ParamField>
+
+<ParamField query="sort_dir" type="string">
+  Sort direction. Accepted values: `asc` (ascending) or `desc` (descending). Defaults to `desc`.
+</ParamField>
+
+<ParamField query="market_type" type="string">
+  Filter exchanges by fee model. Accepted values: `fees`, `no_fees`, `all` *(default)*.
+</ParamField>
+
+<ParamField query="category" type="string">
+  Filter by exchange category. Accepted values:
+
+  | Value | Description |
+  |-------|-------------|
+  | `spot` | Centralised spot exchanges |
+  | `derivatives` | Futures and options exchanges |
+  | `dex` | Decentralised exchanges |
+  | `lending` | Lending protocols |
+  | `all` | All categories *(default)* |
+</ParamField>
+
+<ParamField query="convert" type="string">
+  Return volume figures denominated in an additional fiat or cryptocurrency (e.g., `EUR`, `BTC`).
+</ParamField>
+
+<ParamField query="aux" type="string">
+  Comma-separated list of supplementary fields to include. Available options:
+
+  | Field | Description |
+  |-------|-------------|
+  | `num_market_pairs` | Active market pair count |
+  | `traffic_score` | Normalised web traffic score |
+  | `rank` | Current CMC rank |
+  | `exchange_score` | Composite liquidity and reliability score |
+  | `effective_liquidity_24h` | Liquidity-adjusted 24h volume |
+  | `date_launched` | Exchange launch date |
+  | `fiats` | Supported fiat currencies |
+</ParamField>
+
+---
+
+## Response Fields
+
+<ResponseField name="data" type="array">
+  <Expandable title="Exchange listing object">
+    <ResponseField name="id" type="integer">
+      CoinMarketCap's internal unique identifier for the exchange.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name of the exchange (e.g., `Binance`).
+    </ResponseField>
+    <ResponseField name="slug" type="string">
+      URL-safe identifier used in other CMC API calls (e.g., `binance`).
+    </ResponseField>
+    <ResponseField name="num_market_pairs" type="integer">
+      Number of active trading pairs listed on this exchange.
+    </ResponseField>
+    <ResponseField name="volume_24h" type="number">
+      Reported 24-hour trading volume in USD.
+    </ResponseField>
+    <ResponseField name="volume_7d" type="number">
+      Reported 7-day trading volume in USD.
+    </ResponseField>
+    <ResponseField name="volume_30d" type="number">
+      Reported 30-day trading volume in USD.
+    </ResponseField>
+    <ResponseField name="rank" type="integer">
+      Current CMC ranking position by volume.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --request GET \
+  --url "https://pro-api.coinmarketcap.com/v1/exchange/listings/latest?start=1&limit=5&sort=volume_24h&sort_dir=desc&category=spot&aux=num_market_pairs,rank,exchange_score,date_launched" \
+  --header "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  --header "Accept: application/json"
+```
+
+```python Python
+import requests
+
+url = "https://pro-api.coinmarketcap.com/v1/exchange/listings/latest"
+headers = {
+    "X-CMC_PRO_API_KEY": "YOUR_API_KEY",
+    "Accept": "application/json",
+}
+params = {
+    "start": 1,
+    "limit": 5,
+    "sort": "volume_24h",
+    "sort_dir": "desc",
+    "category": "spot",
+    "aux": "num_market_pairs,rank,exchange_score,date_launched",
+}
+
+response = requests.get(url, headers=headers, params=params)
+data = response.json()
+print(data)
+```
+
+</CodeGroup>
+
+### Sample Response
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-15T12:30:00.000Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 22,
+    "credit_count": 1
+  },
+  "data": [
+    {
+      "id": 270,
+      "name": "Binance",
+      "slug": "binance",
+      "num_market_pairs": 2341,
+      "rank": 1,
+      "exchange_score": 9.9,
+      "date_launched": "2017-07-14T00:00:00.000Z",
+      "quote": {
+        "USD": {
+          "volume_24h": 14823904812.00,
+          "volume_7d": 98341029403.00,
+          "volume_30d": 412039482910.00,
+          "last_updated": "2024-11-15T12:29:00.000Z"
+        }
+      }
+    },
+    {
+      "id": 89,
+      "name": "Bybit",
+      "slug": "bybit",
+      "num_market_pairs": 1082,
+      "rank": 2,
+      "exchange_score": 9.4,
+      "date_launched": "2018-03-01T00:00:00.000Z",
+      "quote": {
+        "USD": {
+          "volume_24h": 8203948120.00,
+          "volume_7d": 53201938400.00,
+          "volume_30d": 218904830120.00,
+          "last_updated": "2024-11-15T12:29:00.000Z"
+        }
+      }
+    }
+  ]
+}
+```

@@ -1,0 +1,236 @@
+---
+title: "Access Historical Cryptocurrency Market Data"
+sidebarTitle: "Historical Data"
+description: "Retrieve 14+ years of daily and intraday crypto price history, OHLCV candlesticks, and historical market rankings via the CoinMarketCap API."
+---
+
+CoinMarketCap's historical dataset spans more than 14 years of cryptocurrency market activity, making it one of the deepest price archives in the industry. Whether you're backtesting a trading strategy, building a charting library, or training a predictive model, you can retrieve daily close prices, intraday intervals as granular as 5 minutes, full OHLCV candlestick bars, and point-in-time market cap rankings — all from a single authenticated API.
+
+## Daily Historical Quotes
+
+The `/v3/cryptocurrency/quotes/historical` endpoint returns time-series price data for any asset. Pass `time_start` and `time_end` as ISO 8601 timestamps (or Unix epoch seconds), and set `interval=daily` for one data point per calendar day.
+
+```bash curl
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v3/cryptocurrency/quotes/historical\
+?symbol=BTC\
+&time_start=2025-01-01\
+&time_end=2025-01-31\
+&interval=daily\
+&convert=USD"
+```
+
+The response wraps price snapshots in a `quotes` array, each entry containing a `timestamp` and the full `quote` object:
+
+```json
+{
+  "data": {
+    "id": 1,
+    "name": "Bitcoin",
+    "symbol": "BTC",
+    "quotes": [
+      {
+        "timestamp": "2025-01-01T00:00:00.000Z",
+        "quote": {
+          "USD": {
+            "price": 94201.53,
+            "volume_24h": 38412900000,
+            "market_cap": 1863402000000,
+            "percent_change_24h": 1.42,
+            "circulating_supply": 19797643
+          }
+        }
+      },
+      {
+        "timestamp": "2025-01-02T00:00:00.000Z",
+        "quote": {
+          "USD": {
+            "price": 96481.10,
+            "volume_24h": 41200100000,
+            "market_cap": 1908432000000,
+            "percent_change_24h": 2.42
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Intraday Data
+
+For higher-resolution analysis, the same `/v3/cryptocurrency/quotes/historical` endpoint supports sub-daily intervals. Set the `interval` parameter to one of the following values:
+
+| Interval | Description |
+|----------|-------------|
+| `5m` | One data point every 5 minutes |
+| `15m` | One data point every 15 minutes |
+| `30m` | One data point every 30 minutes |
+| `1h` | Hourly snapshots |
+| `2h` | One data point every 2 hours |
+| `6h` | One data point every 6 hours |
+| `12h` | Twice-daily snapshots |
+
+<Note>
+  Intraday intervals are available on the **Startup plan and above**. Basic and Builder plans are limited to daily granularity.
+</Note>
+
+The Python example below fetches hourly BTC data for the past 7 days and prints a concise price log:
+
+```python Python
+import requests
+from datetime import datetime, timedelta, timezone
+
+API_KEY = "YOUR_API_KEY"
+BASE_URL = "https://pro-api.coinmarketcap.com"
+
+def fetch_intraday(symbol: str, interval: str = "1h", days: int = 7) -> list:
+    """
+    Fetch intraday historical quotes for a given symbol.
+
+    Args:
+        symbol:   Cryptocurrency ticker, e.g. "BTC"
+        interval: One of 5m | 15m | 30m | 1h | 2h | 6h | 12h
+        days:     Number of trailing days to retrieve
+
+    Returns:
+        List of (timestamp, price_usd) tuples
+    """
+    now = datetime.now(timezone.utc)
+    time_start = (now - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    time_end = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    response = requests.get(
+        f"{BASE_URL}/v3/cryptocurrency/quotes/historical",
+        headers={"X-CMC_PRO_API_KEY": API_KEY},
+        params={
+            "symbol": symbol,
+            "time_start": time_start,
+            "time_end": time_end,
+            "interval": interval,
+            "convert": "USD",
+        },
+    )
+    response.raise_for_status()
+
+    quotes = response.json()["data"]["quotes"]
+    return [(q["timestamp"], q["quote"]["USD"]["price"]) for q in quotes]
+
+
+if __name__ == "__main__":
+    prices = fetch_intraday("BTC", interval="1h", days=7)
+    print(f"Fetched {len(prices)} hourly BTC data points\n")
+    for ts, price in prices[-5:]:   # print the 5 most recent
+        print(f"  {ts}  →  ${price:,.2f}")
+```
+
+---
+
+## OHLCV Candlestick Data
+
+The `/v1/cryptocurrency/ohlcv/historical` endpoint returns open, high, low, close, and volume bars — the standard format consumed by most charting libraries and backtesting frameworks.
+
+**Parameters:**
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `id` or `symbol` | Yes | CoinMarketCap ID or ticker symbol |
+| `time_start` | Yes | Start of the date range (ISO 8601 or Unix epoch) |
+| `time_end` | Yes | End of the date range |
+| `interval` | No | Bar interval: `daily` (default), `weekly`, `monthly`, `1h`, `4h`, etc. |
+| `convert` | No | Quote currency; defaults to `USD` |
+| `count` | No | Maximum number of bars to return (up to 10,000) |
+
+```python Python
+import requests
+
+API_KEY = "YOUR_API_KEY"
+
+def fetch_ohlcv(symbol: str, time_start: str, time_end: str, interval: str = "daily") -> list:
+    """Fetch OHLCV bars for a symbol over a date range."""
+    response = requests.get(
+        "https://pro-api.coinmarketcap.com/v1/cryptocurrency/ohlcv/historical",
+        headers={"X-CMC_PRO_API_KEY": API_KEY},
+        params={
+            "symbol": symbol,
+            "time_start": time_start,
+            "time_end": time_end,
+            "interval": interval,
+            "convert": "USD",
+        },
+    )
+    response.raise_for_status()
+    return response.json()["data"]["quotes"]
+
+
+candles = fetch_ohlcv("ETH", "2025-01-01", "2025-03-31")
+for bar in candles[:3]:
+    q = bar["quote"]["USD"]
+    print(
+        f"{bar['time_open'][:10]}  "
+        f"O={q['open']:,.2f}  H={q['high']:,.2f}  "
+        f"L={q['low']:,.2f}  C={q['close']:,.2f}  V={q['volume']:,.0f}"
+    )
+```
+
+A single OHLCV bar in the response looks like this:
+
+```json
+{
+  "time_open": "2025-01-15T00:00:00.000Z",
+  "time_close": "2025-01-15T23:59:59.999Z",
+  "time_high": "2025-01-15T14:23:00.000Z",
+  "time_low": "2025-01-15T02:11:00.000Z",
+  "quote": {
+    "USD": {
+      "open": 3412.80,
+      "high": 3589.40,
+      "low": 3398.15,
+      "close": 3521.65,
+      "volume": 18742300000,
+      "market_cap": 422890000000,
+      "timestamp": "2025-01-15T23:59:59.999Z"
+    }
+  }
+}
+```
+
+---
+
+## Historical Rankings
+
+The `/v1/cryptocurrency/listings/historical` endpoint returns daily point-in-time snapshots of the full CoinMarketCap rankings — the same leaderboard you see on the website, frozen at any date you choose.
+
+```bash curl
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/historical\
+?date=2024-01-01\
+&limit=100\
+&convert=USD"
+```
+
+Each record includes the asset's rank, market cap, circulating supply, and price at that specific date. This makes the endpoint particularly valuable for:
+
+- **Backtesting market-cap-weighted index strategies** — reconstruct index composition at any point in the past and simulate rebalancing
+- **Studying market structure changes** — track which assets entered or fell out of the top 10/50/100 over time
+- **Sector rotation analysis** — compare market cap dominance of BTC, ETH, and altcoins across market cycles
+
+---
+
+## Historical Data Depth by Plan
+
+Access to deeper history and finer intervals requires higher-tier plans. Use this as a guide when choosing the right plan for your use case.
+
+<Info>
+| Plan | Daily History | Intraday History | Intraday Intervals |
+|------|--------------|------------------|--------------------|
+| **Basic** | 1 year | ✗ Not available | — |
+| **Builder** | 3 years | 1 month | 1h minimum |
+| **Startup** | All-time (14+ years) | 12 months | 5m minimum |
+| **Standard** | All-time | 12 months | 5m minimum |
+| **Professional** | All-time | 12 months | 5m minimum |
+
+Upgrade your plan in the [CoinMarketCap Developer Portal](https://pro.coinmarketcap.com/account).
+</Info>

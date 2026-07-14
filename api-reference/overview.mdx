@@ -1,0 +1,126 @@
+---
+title: "CoinMarketCap REST API — Structure & Conventions"
+sidebarTitle: "Overview"
+description: "Everything you need to know about authentication, versioning, response envelopes, and common parameters before making your first API call."
+---
+
+The CoinMarketCap REST API gives you programmatic access to real-time and historical cryptocurrency market data, metadata, exchange information, and global metrics. All endpoints share a consistent structure: every response wraps its payload in a standard envelope that carries timing, credit, and error information alongside your requested data. Once you understand that envelope and the handful of shared parameters described below, navigating any endpoint becomes straightforward.
+
+## Base URL
+
+All API calls target a single base URL regardless of the version or resource:
+
+```
+https://pro-api.coinmarketcap.com
+```
+
+Append the versioned path for the endpoint you want — for example, `https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest`.
+
+## Authentication
+
+Every request must be authenticated with your API key. There are two ways to supply it:
+
+**Preferred — request header:**
+
+```http
+X-CMC_PRO_API_KEY: <your-api-key>
+```
+
+**Alternative — query parameter:**
+
+```
+?CMC_PRO_API_KEY=<your-api-key>
+```
+
+The header approach is strongly recommended because it keeps your key out of server logs and browser history. If you do not yet have a key, [sign up for a free plan](https://pro.coinmarketcap.com/signup) — no credit card is required to get started.
+
+<Note>
+  Your API key is tied to your subscription plan. Protect it like a password and rotate it immediately if you suspect it has been compromised.
+</Note>
+
+## API Versioning
+
+CoinMarketCap maintains multiple API versions simultaneously so that upgrades never break existing integrations. Current supported versions are:
+
+| Version | Path Prefix | Notes |
+|---------|-------------|-------|
+| v1 | `/v1/` | Original release; most endpoints available here |
+| v2 | `/v2/` | Improved batch lookups; preferred for quotes and metadata |
+| v3 | `/v3/` | Historical time-series endpoints |
+| v4 | `/v4/` | Newer exchange and DeFi endpoints |
+
+All versions remain active and receive the same data freshness. You can mix versions freely within a single application.
+
+## Response Envelope
+
+Every response — success or error — is wrapped in a consistent JSON envelope with two top-level keys: `status` and `data`.
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-15T12:34:56.789Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 8,
+    "credit_count": 1,
+    "notice": null
+  },
+  "data": { ... }
+}
+```
+
+### Status Object Fields
+
+<ResponseField name="timestamp" type="string">
+  ISO 8601 UTC timestamp recording when the server processed your request. Use this for audit logging and cache expiry calculations.
+</ResponseField>
+
+<ResponseField name="error_code" type="integer">
+  `0` indicates success. Any non-zero value signals an error — see the [Errors](/api-reference/errors) page for the full code list and recommended handling.
+</ResponseField>
+
+<ResponseField name="error_message" type="string | null">
+  A human-readable description of the error when `error_code` is non-zero; `null` on success. Do not parse this string programmatically — use `error_code` for branching logic.
+</ResponseField>
+
+<ResponseField name="elapsed" type="integer">
+  The number of milliseconds the server spent processing your request, excluding network transit time. Useful for performance benchmarking.
+</ResponseField>
+
+<ResponseField name="credit_count" type="integer">
+  The number of API credits consumed by this call. Monitor this field to understand your usage against your monthly plan limit.
+</ResponseField>
+
+<ResponseField name="notice" type="string | null">
+  An optional informational message from CoinMarketCap — for example, deprecation notices or plan-upgrade suggestions. `null` when there is nothing to communicate.
+</ResponseField>
+
+## Common Parameters
+
+The following parameters appear across many endpoints. Understanding them once means you can apply them everywhere.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | string | CMC cryptocurrency ID(s), comma-separated. The most stable identifier — IDs never change even if a symbol is reused. |
+| `symbol` | string | Ticker symbol(s), comma-separated (e.g., `BTC,ETH`). Convenient but can be ambiguous; prefer `id` in production. |
+| `slug` | string | URL-friendly name(s), comma-separated (e.g., `bitcoin,ethereum`). Stable and human-readable. |
+| `convert` | string | Comma-separated fiat or crypto symbols to convert quoted values into (e.g., `USD,EUR,BTC`). Defaults to USD. |
+| `aux` | string | Comma-separated list of additional fields to include in the response. Reduces payload size when omitted. |
+| `start` | integer | 1-based offset for paginating through ranked lists (default `1`). |
+| `limit` | integer | Maximum number of results to return per call. Check each endpoint for its own maximum. |
+
+## Data Formats
+
+- **Encoding:** All requests and responses use UTF-8 JSON. Set `Accept: application/json` on your requests.
+- **Timestamps:** All dates and times are returned as ISO 8601 strings in UTC, e.g., `"2024-11-15T12:34:56.789Z"`. Unix timestamps are accepted as input on endpoints that take date range parameters.
+- **Prices and numeric values:** Prices, market caps, and volumes are returned as IEEE 754 double-precision floating-point numbers. Use a decimal library if you need exact arithmetic.
+- **Pagination:** Ranked list endpoints use `start` + `limit` offset pagination. There is no cursor-based pagination.
+
+## Minimal Example
+
+```bash
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=5"
+```
+
+The response will contain a `status` envelope with `error_code: 0` and a `data` array of the top 5 cryptocurrencies by market cap, each including price, volume, and market cap quoted in USD.

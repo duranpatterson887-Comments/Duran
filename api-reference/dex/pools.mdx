@@ -1,0 +1,183 @@
+---
+title: "DEX Pools — Liquidity Pool OHLCV Data"
+sidebarTitle: "Pools"
+description: "Query historical OHLCV candlestick data for any on-chain liquidity pool to analyze price action, volume trends, and LP performance over time."
+---
+
+Liquidity pools are the beating heart of every DEX, and their historical price and volume data is indispensable for technical analysis, backtesting strategies, and evaluating liquidity provider returns. This endpoint delivers OHLCV (Open, High, Low, Close, Volume) candlestick data at your chosen interval — from 5-minute intraday bars all the way to daily candles — for any tracked pool contract, on any supported network.
+
+## Endpoint
+
+<ParamField path="GET /v4/dex/pools/ohlcv/historical" type="string">
+  Fetch historical OHLCV candlestick data for a specific on-chain liquidity pool.
+</ParamField>
+
+**Base URL:** `https://pro-api.coinmarketcap.com`
+
+**Authentication:** Pass your API key in the `X-CMC_PRO_API_KEY` request header.
+
+---
+
+## Request Parameters
+
+<ParamField query="address" type="string" required>
+  The contract address of the liquidity pool you want to query (e.g., `0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640` for the Uniswap V3 ETH/USDC 0.05% pool on Ethereum).
+</ParamField>
+
+<ParamField query="network_slug" type="string" required>
+  The blockchain network where the pool is deployed. Examples: `ethereum`, `base`, `solana`, `bsc`, `arbitrum`, `polygon`.
+</ParamField>
+
+<ParamField query="time_start" type="string">
+  The start of the historical window. Accepts either an ISO 8601 datetime string (e.g., `2024-10-01T00:00:00Z`) or a Unix timestamp in seconds (e.g., `1727740800`). Defaults to `count` intervals before `time_end`.
+</ParamField>
+
+<ParamField query="time_end" type="string">
+  The end of the historical window. Accepts ISO 8601 or Unix timestamp. Defaults to the current time.
+</ParamField>
+
+<ParamField query="interval" type="string">
+  The candlestick interval. Accepted values:
+
+  | Value | Description |
+  |-------|-------------|
+  | `5m` | 5-minute candles |
+  | `15m` | 15-minute candles |
+  | `1h` | 1-hour candles *(default)* |
+  | `4h` | 4-hour candles |
+  | `1d` | Daily candles |
+</ParamField>
+
+<ParamField query="count" type="integer">
+  The number of OHLCV candles to return. Defaults to `100`. Maximum value is `1000`. When `time_start` is omitted, the window is calculated by counting backwards from `time_end`.
+</ParamField>
+
+<ParamField query="convert" type="string">
+  Denomination currency for OHLCV values. Defaults to USD. Pass a valid ISO 4217 code (e.g., `EUR`) or a CoinMarketCap cryptocurrency symbol (e.g., `ETH`) to receive values in that currency.
+</ParamField>
+
+---
+
+## Response Fields
+
+<ResponseField name="data" type="object">
+  <Expandable title="Pool OHLCV response">
+    <ResponseField name="address" type="string">
+      The pool contract address queried.
+    </ResponseField>
+    <ResponseField name="network" type="string">
+      The network slug for this pool.
+    </ResponseField>
+    <ResponseField name="quotes" type="array">
+      <Expandable title="OHLCV candle object">
+        <ResponseField name="timestamp" type="string">
+          ISO 8601 timestamp marking the opening of the candle interval.
+        </ResponseField>
+        <ResponseField name="open" type="number">
+          Price of the base token at the start of the interval, in the requested currency.
+        </ResponseField>
+        <ResponseField name="high" type="number">
+          Highest traded price of the base token during the interval.
+        </ResponseField>
+        <ResponseField name="low" type="number">
+          Lowest traded price of the base token during the interval.
+        </ResponseField>
+        <ResponseField name="close" type="number">
+          Price of the base token at the end of the interval.
+        </ResponseField>
+        <ResponseField name="volume" type="number">
+          Total swap volume through the pool during the interval, in the requested currency.
+        </ResponseField>
+        <ResponseField name="liquidity" type="number">
+          Total value locked (TVL) in the pool at the close of the interval, in the requested currency.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --request GET \
+  --url "https://pro-api.coinmarketcap.com/v4/dex/pools/ohlcv/historical?address=0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640&network_slug=ethereum&interval=1h&count=2" \
+  --header "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  --header "Accept: application/json"
+```
+
+```python Python
+import requests
+
+url = "https://pro-api.coinmarketcap.com/v4/dex/pools/ohlcv/historical"
+headers = {
+    "X-CMC_PRO_API_KEY": "YOUR_API_KEY",
+    "Accept": "application/json",
+}
+params = {
+    # Uniswap V3 ETH/USDC 0.05% pool on Ethereum
+    "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+    "network_slug": "ethereum",
+    "interval": "1h",
+    "count": 2,
+}
+
+response = requests.get(url, headers=headers, params=params)
+data = response.json()
+print(data)
+```
+
+</CodeGroup>
+
+### Sample Response
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-15T12:00:00.000Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 18,
+    "credit_count": 1
+  },
+  "data": {
+    "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+    "network": "ethereum",
+    "base_token": {
+      "symbol": "WETH",
+      "name": "Wrapped Ether"
+    },
+    "quote_token": {
+      "symbol": "USDC",
+      "name": "USD Coin"
+    },
+    "quotes": [
+      {
+        "timestamp": "2024-11-15T10:00:00.000Z",
+        "open": 3198.42,
+        "high": 3251.09,
+        "low": 3187.65,
+        "close": 3241.87,
+        "volume": 18492031.55,
+        "liquidity": 188904712.00
+      },
+      {
+        "timestamp": "2024-11-15T11:00:00.000Z",
+        "open": 3241.87,
+        "high": 3268.44,
+        "low": 3229.11,
+        "close": 3255.60,
+        "volume": 21034890.20,
+        "liquidity": 189203847.50
+      }
+    ]
+  }
+}
+```
+
+<Tip>
+  Pool OHLCV data is a powerful tool for liquidity provider (LP) performance analysis. By comparing the `close` price at the time you added liquidity against the current `close`, alongside the `liquidity` and `volume` fields, you can estimate impermanent loss and fee income accrued over any historical window — giving you a data-driven view of your LP position's net return.
+</Tip>

@@ -1,0 +1,179 @@
+---
+title: "Exchange Quotes — Live Volume and Market Data"
+sidebarTitle: "Quotes"
+description: "Fetch real-time volume, market pair counts, and liquidity statistics for one or more specific exchanges by CMC ID or slug."
+---
+
+When you need live, exchange-level market statistics — not a ranked list, but a targeted snapshot of one or more specific venues — the exchange quotes endpoint delivers. Supply any combination of CoinMarketCap exchange IDs or slug identifiers and get back real-time volume across 24-hour, 7-day, and 30-day windows, alongside market pair counts, traffic scores, and composite exchange scores that help you assess the health and trustworthiness of any platform at a glance.
+
+## Endpoint
+
+<ParamField path="GET /v1/exchange/quotes/latest" type="string">
+  Retrieve real-time volume and market statistics for one or more exchanges by ID or slug.
+</ParamField>
+
+**Base URL:** `https://pro-api.coinmarketcap.com`
+
+**Authentication:** Pass your API key in the `X-CMC_PRO_API_KEY` request header.
+
+---
+
+## Request Parameters
+
+<Note>
+  You must supply at least one of `id` or `slug`. Both parameters accept comma-separated values to query multiple exchanges in a single request.
+</Note>
+
+<ParamField query="id" type="string">
+  One or more CoinMarketCap exchange IDs, comma-separated (e.g., `270,89` for Binance and Bybit). Use the exchange listings endpoint to look up IDs.
+</ParamField>
+
+<ParamField query="slug" type="string">
+  One or more exchange slugs, comma-separated (e.g., `binance,coinbase-exchange`). Slugs match the values returned in the `slug` field from the listings endpoint.
+</ParamField>
+
+<ParamField query="convert" type="string">
+  Return volume figures in an additional fiat or cryptocurrency denomination (e.g., `EUR`, `GBP`, `BTC`).
+</ParamField>
+
+<ParamField query="aux" type="string">
+  Comma-separated list of supplementary fields to include in the response. Available options:
+
+  | Field | Description |
+  |-------|-------------|
+  | `num_market_pairs` | Number of active trading pairs |
+  | `traffic_score` | Normalised web traffic score |
+  | `rank` | Current CMC volume rank |
+  | `exchange_score` | Composite liquidity and reliability score |
+</ParamField>
+
+---
+
+## Response Fields
+
+<ResponseField name="data" type="object">
+  A map of exchange slugs to their respective quote objects.
+  <Expandable title="Exchange quote object">
+    <ResponseField name="id" type="integer">
+      CoinMarketCap's unique identifier for the exchange.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name of the exchange.
+    </ResponseField>
+    <ResponseField name="slug" type="string">
+      URL-safe identifier for the exchange.
+    </ResponseField>
+    <ResponseField name="num_market_pairs" type="integer">
+      Number of actively tracked market pairs on this exchange.
+    </ResponseField>
+    <ResponseField name="last_updated" type="string">
+      ISO 8601 timestamp of the most recent data refresh.
+    </ResponseField>
+    <ResponseField name="quote" type="object">
+      <Expandable title="Quote currency object (e.g., USD)">
+        <ResponseField name="volume_24h" type="number">
+          Reported 24-hour trading volume in the requested currency.
+        </ResponseField>
+        <ResponseField name="volume_24h_reported" type="number">
+          Self-reported 24-hour volume as published by the exchange (may differ from CMC-adjusted figure).
+        </ResponseField>
+        <ResponseField name="volume_7d" type="number">
+          Reported 7-day trading volume in the requested currency.
+        </ResponseField>
+        <ResponseField name="volume_30d" type="number">
+          Reported 30-day trading volume in the requested currency.
+        </ResponseField>
+        <ResponseField name="percent_change_volume_24h" type="number">
+          Percentage change in 24-hour volume compared to the previous 24-hour window.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --request GET \
+  --url "https://pro-api.coinmarketcap.com/v1/exchange/quotes/latest?slug=binance,coinbase-exchange&aux=num_market_pairs,rank,exchange_score,traffic_score" \
+  --header "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  --header "Accept: application/json"
+```
+
+```python Python
+import requests
+
+url = "https://pro-api.coinmarketcap.com/v1/exchange/quotes/latest"
+headers = {
+    "X-CMC_PRO_API_KEY": "YOUR_API_KEY",
+    "Accept": "application/json",
+}
+params = {
+    "slug": "binance,coinbase-exchange",
+    "aux": "num_market_pairs,rank,exchange_score,traffic_score",
+}
+
+response = requests.get(url, headers=headers, params=params)
+data = response.json()
+print(data)
+```
+
+</CodeGroup>
+
+### Sample Response
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-15T13:00:00.000Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 12,
+    "credit_count": 1
+  },
+  "data": {
+    "binance": {
+      "id": 270,
+      "name": "Binance",
+      "slug": "binance",
+      "num_market_pairs": 2341,
+      "rank": 1,
+      "exchange_score": 9.9,
+      "traffic_score": 1000.0,
+      "last_updated": "2024-11-15T12:59:00.000Z",
+      "quote": {
+        "USD": {
+          "volume_24h": 14823904812.00,
+          "volume_24h_reported": 15100000000.00,
+          "volume_7d": 98341029403.00,
+          "volume_30d": 412039482910.00,
+          "percent_change_volume_24h": 8.42
+        }
+      }
+    },
+    "coinbase-exchange": {
+      "id": 89,
+      "name": "Coinbase Exchange",
+      "slug": "coinbase-exchange",
+      "num_market_pairs": 643,
+      "rank": 5,
+      "exchange_score": 8.7,
+      "traffic_score": 614.3,
+      "last_updated": "2024-11-15T12:59:00.000Z",
+      "quote": {
+        "USD": {
+          "volume_24h": 2198302841.00,
+          "volume_24h_reported": 2250000000.00,
+          "volume_7d": 14902830120.00,
+          "volume_30d": 61203948200.00,
+          "percent_change_volume_24h": -3.17
+        }
+      }
+    }
+  }
+}
+```

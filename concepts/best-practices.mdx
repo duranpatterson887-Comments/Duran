@@ -1,0 +1,218 @@
+---
+title: "Best Practices for Production API Integrations"
+sidebarTitle: "Best Practices"
+description: "Follow these proven patterns for caching, batching, error handling, and security to build a robust, efficient CoinMarketCap integration that scales with your app."
+---
+
+Building a production-ready integration with the CoinMarketCap API means going beyond the first successful API call. The patterns in this guide help you minimize credit consumption, eliminate avoidable errors, protect your API key, and deliver a fast, reliable experience to your users — whether you are building a personal portfolio tracker or a high-throughput trading dashboard.
+
+## Use CMC IDs Instead of Symbols
+
+Never use raw ticker symbols as persistent keys in your application. Symbols are not unique — hundreds of tokens share common tickers across chains and forks — and they can change when a project rebrands. CMC IDs are permanent integers that never change, making them the only safe identifier for production data pipelines.
+
+The right approach is to **fetch the full asset map once at startup** and build an in-memory or database-backed lookup table from symbol (or slug) to CMC ID. Refresh this map daily to catch newly listed assets.
+
+```python
+import requests
+
+def build_id_map(api_key: str) -> dict:
+    """
+    Fetch the full CMC cryptocurrency map and return a dict of
+    { symbol_lowercase: cmc_id } for fast lookups.
+    Call this once at startup and cache the result.
+    """
+    response = requests.get(
+        "https://pro-api.coinmarketcap.com/v1/cryptocurrency/map",
+        headers={"X-CMC_PRO_API_KEY": api_key},
+        params={"listing_status": "active", "limit": 5000}
+    )
+    response.raise_for_status()
+
+    id_map = {}
+    for asset in response.json()["data"]:
+        id_map[asset["symbol"].lower()] = asset["id"]
+        id_map[asset["slug"]]           = asset["id"]
+
+    return id_map
+
+
+# At app startup
+ID_MAP = build_id_map("YOUR_API_KEY")
+
+# Later — safe symbol-to-ID resolution
+btc_id = ID_MAP.get("btc")   # → 1
+eth_id = ID_MAP.get("eth")   # → 1027
+```
+
+Once you have the map, pass CMC IDs to every subsequent endpoint call using the `id` parameter rather than `symbol`.
+
+## Cache Aggressively
+
+The fastest API call is the one you never make. Caching is the single most impactful optimization you can apply — it slashes credit consumption, reduces latency for your users, and makes your application resilient to brief API outages.
+
+Match your cache TTL to the freshness requirements and rate limits of your plan:
+
+| Data Type | Basic / Builder TTL | Startup+ TTL | Notes |
+|-----------|-------------------|--------------|-------|
+| Price quotes | 60 seconds | 30 seconds | Refresh via background job, not per-request |
+| Market listings | 5 minutes | 5 minutes | Rankings shift slowly |
+| Asset metadata (logo, name, description) | 24 hours | 24 hours | Almost never changes |
+| Historical OHLCV | Indefinitely | Indefinitely | Past data is immutable |
+| `/v1/cryptocurrency/map` | 24 hours | 24 hours | New listings are rare |
+
+<Tip>
+  Use the `/v1/key/info` endpoint to programmatically check your remaining monthly credits and minute-level rate limit status at any time:
+
+  ```
+  GET https://pro-api.coinmarketcap.com/v1/key/info
+  ```
+
+  The response includes `usage.current_minute.requests_made`, `usage.current_day.credits_used`, and your plan's `credit_limit_monthly`. Build a lightweight cron job or startup check around this endpoint to alert you before you approach plan limits.
+</Tip>
+
+A simple Redis-backed cache pattern in Python:
+
+```python
+import redis
+import requests
+import json
+
+cache = redis.Redis(host="localhost", port=6379, decode_responses=True)
+
+def get_quotes(ids: list[int], api_key: str, ttl: int = 60) -> dict:
+    cache_key = f"cmc:quotes:{','.join(map(str, sorted(ids)))}"
+    cached    = cache.get(cache_key)
+
+    if cached:
+        return json.loads(cached)
+
+    response = requests.get(
+        "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest",
+        headers={"X-CMC_PRO_API_KEY": api_key},
+        params={"id": ",".join(map(str, ids))}
+    )
+    response.raise_for_status()
+    data = response.json()
+
+    cache.setex(cache_key, ttl, json.dumps(data))
+    return data
+```
+
+## Batch Your Requests
+
+Most CoinMarketCap endpoints accept a comma-separated list of IDs, symbols, or slugs in a single call. Batching is the difference between consuming 1 credit and consuming 100 credits for the same data.
+
+```
+# ✅ One call, one credit — fetch BTC, ETH, and USDT simultaneously
+GET /v2/cryptocurrency/quotes/latest?id=1,1027,825
+
+# ❌ Three calls, three credits — never do this in a loop
+GET /v2/cryptocurrency/quotes/latest?id=1
+GET /v2/cryptocurrency/quotes/latest?id=1027
+GET /v2/cryptocurrency/quotes/latest?id=825
+```
+
+Most listing and quote endpoints support **up to 100 IDs per call**. If your application tracks more than 100 assets, group them into batches of 100 and make parallel requests rather than sequential ones, then merge the results.
+
+```python
+from concurrent.futures import ThreadPoolExecutor
+
+def fetch_batch(ids_chunk, api_key):
+    resp = requests.get(
+        "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest",
+        headers={"X-CMC_PRO_API_KEY": api_key},
+        params={"id": ",".join(map(str, ids_chunk))}
+    )
+    return resp.json()["data"]
+
+def fetch_all_quotes(all_ids: list[int], api_key: str) -> dict:
+    chunks = [all_ids[i:i+100] for i in range(0, len(all_ids), 100)]
+
+    results = {}
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [executor.submit(fetch_batch, chunk, api_key) for chunk in chunks]
+        for future in futures:
+            results.update(future.result())
+
+    return results
+```
+
+## Monitor Credit Usage
+
+Every API response includes a `status.credit_count` field showing exactly how many credits the call consumed. Log this value and aggregate it over time to understand your credit burn rate and forecast whether your current plan covers your usage.
+
+```python
+response_data = requests.get(...).json()
+
+credits_used = response_data["status"]["credit_count"]
+print(f"This call consumed {credits_used} credit(s)")
+
+# Accumulate in your metrics system
+metrics.increment("cmc.credits_used", credits_used)
+```
+
+Set up alerting in your monitoring dashboard (Datadog, Grafana, CloudWatch, etc.) to notify you when:
+- Daily credit consumption exceeds 80% of your monthly allocation ÷ 30
+- Any call unexpectedly returns `credit_count > 1` (may indicate an expensive endpoint)
+- `error_code: 1008` appears (plan limit reached)
+
+## Handle Errors Gracefully
+
+Different error codes require different responses. Build your error-handling layer to distinguish retryable transient errors from permanent failures.
+
+| Scenario | `error_code` | HTTP Status | Action |
+|----------|-------------|-------------|--------|
+| Rate limited | `1008` | 429 | Retry with exponential backoff |
+| Server error | — | 500, 503 | Retry with exponential backoff |
+| Invalid API key | `1002` | 401 | Fail immediately — alert ops team |
+| Missing API key | `1001` | 401 | Fail immediately — fix configuration |
+| Bad parameters | `1009` | 400 | Fail immediately — fix request |
+| Plan too low | `1007` | 403 | Fail immediately — upgrade plan |
+
+```python
+def handle_response(response: requests.Response) -> dict:
+    data = response.json()
+    error_code = data["status"]["error_code"]
+
+    if error_code == 0:
+        return data["data"]
+
+    # Retryable
+    if response.status_code in (429, 500, 503):
+        raise RetryableError(data["status"]["error_message"])
+
+    # Permanent — raise immediately
+    raise PermanentError(
+        f"CMC API error {error_code}: {data['status']['error_message']}"
+    )
+```
+
+<Note>
+  Always check `status.error_code` in the JSON body, not just the HTTP status code. In rare cases the API may return HTTP 200 with a non-zero `error_code` — your application must handle both signal paths.
+</Note>
+
+## Never Expose API Keys
+
+Your API key is a secret credential that grants access to your paid plan. Leaking it — even briefly in a public repository, client-side JavaScript bundle, or browser network tab — can result in unauthorized usage that drains your credit allocation.
+
+Follow these rules without exception:
+
+- **Store keys in environment variables**, never in source code or config files committed to version control
+- **Call the API server-side only** — never from a browser, mobile client, or any code your users can inspect
+- **Use a server-side proxy** that your frontend calls instead of the CMC API directly; the proxy injects the key
+- **Add `.env` to your `.gitignore`** before the first commit, not after
+- **Rotate your key immediately** if you suspect it has been exposed; generate a new key from the CMC developer portal
+
+```python
+import os
+
+# ✅ Read from environment — key never appears in source code
+API_KEY = os.environ["CMC_API_KEY"]
+
+# ❌ Hardcoded — exposes key in git history forever
+API_KEY = "b54bcf4d-1bca-4e8e-9a24-22ff2c3d462c"
+```
+
+<Warning>
+  If your API key is committed to a public Git repository, **rotating the key is not enough** — the old key exists in git history and can be extracted. Treat the old key as permanently compromised and assume it may continue to be used. Audit your credit usage logs for unexpected calls immediately after any suspected exposure.
+</Warning>

@@ -1,0 +1,219 @@
+---
+title: "Cryptocurrency Listings — Ranked Market Data"
+sidebarTitle: "Listings"
+description: "Fetch all active cryptocurrencies ranked by market cap, with real-time price, volume, and percentage change data in any currency you choose."
+---
+
+The listings endpoint returns a paginated, ranked snapshot of every active cryptocurrency tracked by CoinMarketCap. By default results are sorted by market capitalization, but you can reorder by volume, price movement, or other metrics and apply a rich set of filters to narrow the response to exactly the assets you care about. This endpoint powers leaderboards, screeners, and portfolio dashboards across the industry.
+
+## Endpoint
+
+```
+GET /v1/cryptocurrency/listings/latest
+```
+
+## Parameters
+
+<ParamField query="start" type="integer">
+  The offset of the first result to return. Defaults to `1`. Use in combination with `limit` to paginate through the full list — for example, `start=101&limit=100` fetches results 101–200.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  The number of results to return. Accepts values from `1` to `5000`. Defaults to `100`. Larger limits still consume only 1 credit per call.
+</ParamField>
+
+<ParamField query="price_min" type="number">
+  Filter out cryptocurrencies with a current price below this value (in USD, or the first currency in `convert`).
+</ParamField>
+
+<ParamField query="price_max" type="number">
+  Filter out cryptocurrencies with a current price above this value.
+</ParamField>
+
+<ParamField query="market_cap_min" type="number">
+  Filter out cryptocurrencies with a market cap below this value (in USD by default).
+</ParamField>
+
+<ParamField query="market_cap_max" type="number">
+  Filter out cryptocurrencies with a market cap above this value.
+</ParamField>
+
+<ParamField query="volume_24h_min" type="number">
+  Filter out cryptocurrencies whose 24-hour trading volume is below this value. Useful for excluding illiquid assets.
+</ParamField>
+
+<ParamField query="percent_change_24h_min" type="number">
+  Filter out cryptocurrencies whose 24-hour percentage change is below this value. For example, `5` returns only assets that have gained more than 5 % in the last day.
+</ParamField>
+
+<ParamField query="percent_change_24h_max" type="number">
+  Filter out cryptocurrencies whose 24-hour percentage change is above this value.
+</ParamField>
+
+<ParamField query="convert" type="string">
+  A comma-separated list of fiat or cryptocurrency symbols used to quote prices. Defaults to `USD`. Each additional conversion currency costs 1 extra credit. Example: `USD,EUR,BTC`.
+</ParamField>
+
+<ParamField query="sort" type="string">
+  The field used to order results. Defaults to `market_cap`. Accepted values: `market_cap`, `name`, `symbol`, `date_added`, `price`, `circulating_supply`, `total_supply`, `max_supply`, `num_market_pairs`, `volume_24h`, `percent_change_1h`, `percent_change_24h`, `percent_change_7d`, `percent_change_30d`.
+</ParamField>
+
+<ParamField query="sort_dir" type="string">
+  Sort direction: `asc` (ascending) or `desc` (descending). Defaults to `desc` for numeric fields and `asc` for name/symbol.
+</ParamField>
+
+<ParamField query="cryptocurrency_type" type="string">
+  Restrict results to a specific asset class. Accepted values: `all` (default), `coins`, `tokens`.
+</ParamField>
+
+<ParamField query="tag" type="string">
+  Filter by a CoinMarketCap tag category. Examples: `defi`, `filesharing`, `stablecoin`, `nft`. Returns only assets tagged accordingly.
+</ParamField>
+
+<ParamField query="aux" type="string">
+  Comma-separated list of additional fields to include in each result object. Available fields: `num_market_pairs`, `cmc_rank`, `date_added`, `tags`, `platform`, `max_supply`, `circulating_supply`, `total_supply`, `market_cap_by_total_supply`, `volume_24h_reported`, `volume_7d`, `volume_7d_reported`, `volume_30d`, `volume_30d_reported`. Including only what you need keeps responses lean.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="data" type="array">
+  An array of cryptocurrency objects ordered by the requested `sort` field.
+
+  <Expandable title="Cryptocurrency object fields">
+    <ResponseField name="id" type="integer">
+      The unique CoinMarketCap ID for this cryptocurrency. This value never changes, even if the symbol is reused by another project.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      The full name of the cryptocurrency, e.g., `"Bitcoin"`.
+    </ResponseField>
+
+    <ResponseField name="symbol" type="string">
+      The ticker symbol, e.g., `"BTC"`.
+    </ResponseField>
+
+    <ResponseField name="slug" type="string">
+      The URL-friendly identifier, e.g., `"bitcoin"`.
+    </ResponseField>
+
+    <ResponseField name="cmc_rank" type="integer">
+      The current market-cap rank (1 = largest). Only present when `cmc_rank` is included in `aux`.
+    </ResponseField>
+
+    <ResponseField name="circulating_supply" type="number">
+      The number of coins or tokens currently in public circulation.
+    </ResponseField>
+
+    <ResponseField name="total_supply" type="number">
+      The total amount of coins or tokens in existence, including those locked or reserved.
+    </ResponseField>
+
+    <ResponseField name="max_supply" type="number | null">
+      The maximum number of coins that will ever exist. `null` if uncapped.
+    </ResponseField>
+
+    <ResponseField name="last_updated" type="string">
+      ISO 8601 UTC timestamp of when this asset's market data was last refreshed.
+    </ResponseField>
+
+    <ResponseField name="quote" type="object">
+      A map of conversion-currency keys to quote objects.
+
+      <Expandable title="Quote object (per currency)">
+        <ResponseField name="price" type="number">
+          Current price in the target currency.
+        </ResponseField>
+        <ResponseField name="volume_24h" type="number">
+          24-hour trading volume in the target currency.
+        </ResponseField>
+        <ResponseField name="market_cap" type="number">
+          Market capitalisation: `price × circulating_supply`.
+        </ResponseField>
+        <ResponseField name="percent_change_1h" type="number">
+          Price change over the last 1 hour as a percentage.
+        </ResponseField>
+        <ResponseField name="percent_change_24h" type="number">
+          Price change over the last 24 hours as a percentage.
+        </ResponseField>
+        <ResponseField name="percent_change_7d" type="number">
+          Price change over the last 7 days as a percentage.
+        </ResponseField>
+        <ResponseField name="last_updated" type="string">
+          ISO 8601 UTC timestamp when this quote was last calculated.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=2&convert=USD"
+```
+
+## Example Response
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-15T14:22:10.508Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 11,
+    "credit_count": 1,
+    "notice": null
+  },
+  "data": [
+    {
+      "id": 1,
+      "name": "Bitcoin",
+      "symbol": "BTC",
+      "slug": "bitcoin",
+      "cmc_rank": 1,
+      "circulating_supply": 19780000,
+      "total_supply": 19780000,
+      "max_supply": 21000000,
+      "last_updated": "2024-11-15T14:22:00.000Z",
+      "quote": {
+        "USD": {
+          "price": 91245.82,
+          "volume_24h": 38412876543.21,
+          "market_cap": 1804824712580.0,
+          "percent_change_1h": 0.31,
+          "percent_change_24h": 2.14,
+          "percent_change_7d": 8.76,
+          "last_updated": "2024-11-15T14:22:00.000Z"
+        }
+      }
+    },
+    {
+      "id": 1027,
+      "name": "Ethereum",
+      "symbol": "ETH",
+      "slug": "ethereum",
+      "cmc_rank": 2,
+      "circulating_supply": 120390000,
+      "total_supply": 120390000,
+      "max_supply": null,
+      "last_updated": "2024-11-15T14:22:00.000Z",
+      "quote": {
+        "USD": {
+          "price": 3142.55,
+          "volume_24h": 19876543210.00,
+          "market_cap": 378211394450.0,
+          "percent_change_1h": 0.18,
+          "percent_change_24h": 1.87,
+          "percent_change_7d": 6.43,
+          "last_updated": "2024-11-15T14:22:00.000Z"
+        }
+      }
+    }
+  ]
+}
+```
+
+<Note>
+  This endpoint always costs **1 credit per call**, regardless of how many results you request with `limit`. Fetching 5,000 assets in a single call is just as economical as fetching 10.
+</Note>

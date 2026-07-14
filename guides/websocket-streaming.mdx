@@ -1,0 +1,237 @@
+---
+title: "Stream Real-Time Crypto Data via WebSocket"
+sidebarTitle: "WebSocket Streaming"
+description: "Connect to CoinMarketCap's WebSocket API to receive sub-second price updates, DEX events, and on-chain signals without polling."
+---
+
+The CoinMarketCap WebSocket API replaces the polling loop with a persistent, push-based connection that delivers price updates, candlestick bars, on-chain transactions, and DEX liquidity events the moment they are available. Instead of burning API credits on repeated REST calls, you subscribe once to the channels you need and receive a continuous stream of updates — ideal for live trading dashboards, alert engines, and automated trading bots that need to react to market moves in milliseconds.
+
+<Note>
+  WebSocket streaming requires the **Startup plan ($79/month) or higher**. REST API polling remains available on Basic and Builder plans. Upgrade in the [CoinMarketCap Developer Portal](https://pro.coinmarketcap.com/account) to unlock streaming.
+</Note>
+
+## Available Streams
+
+Subscribe to one or more of the following channels on a single connection:
+
+| Stream Name | Description |
+|-------------|-------------|
+| `crypto_latest_price` | Real-time price updates for CoinMarketCap-listed assets (sub-second) |
+| `kline` | OHLCV candlestick bars at configurable intervals (1m, 5m, 15m, 1h…) |
+| `unique_trader` | Trader activity signals — new wallets, whale addresses, repeat traders |
+| `transaction` | On-chain transaction events including swap amounts and wallet addresses |
+| `liquidity_event` | DEX liquidity add/remove events with USD value and pool address |
+| `token_rolling_metrics` | Rolling 1h/6h/24h DEX token stats (volume, buys, sells, price change) |
+| `aggregated_token_price` | Cross-DEX aggregated price for tokens, removing single-pool noise |
+| `holder_metrics` | Token holder count changes and distribution data |
+| `pool_rolling_metric` | Pool-level rolling volume, transaction count, and fee accrual |
+
+---
+
+## Connecting to the WebSocket
+
+The WebSocket endpoint is:
+
+```
+wss://push.coinmarketcap.com/ws
+```
+
+Authenticate by appending your API key as a query parameter on the initial connection URL, or by sending it in the first message after connecting.
+
+<CodeGroup>
+
+```javascript JavaScript (ws)
+const WebSocket = require("ws");
+
+const API_KEY = "YOUR_API_KEY";
+const WS_URL = `wss://push.coinmarketcap.com/ws?api_key=${API_KEY}`;
+
+const ws = new WebSocket(WS_URL);
+
+ws.on("open", () => {
+  console.log("Connected to CoinMarketCap WebSocket");
+});
+
+ws.on("message", (data) => {
+  const message = JSON.parse(data);
+  console.log("Received:", JSON.stringify(message, null, 2));
+});
+
+ws.on("error", (err) => {
+  console.error("WebSocket error:", err.message);
+});
+
+ws.on("close", (code, reason) => {
+  console.log(`Connection closed: ${code} — ${reason}`);
+});
+```
+
+```python Python (websockets)
+import asyncio
+import json
+import websockets
+
+API_KEY = "YOUR_API_KEY"
+WS_URL = f"wss://push.coinmarketcap.com/ws?api_key={API_KEY}"
+
+async def connect():
+    async with websockets.connect(WS_URL) as ws:
+        print("Connected to CoinMarketCap WebSocket")
+        async for message in ws:
+            data = json.loads(message)
+            print(json.dumps(data, indent=2))
+
+if __name__ == "__main__":
+    asyncio.run(connect())
+```
+
+</CodeGroup>
+
+---
+
+## Subscribing to Channels
+
+After establishing the connection, send a JSON subscription message to start receiving updates for the channels you want. Use the `SUBSCRIPTION` method with a `params` array listing your chosen stream names.
+
+**Subscribe message format:**
+
+```json
+{
+  "method": "SUBSCRIPTION",
+  "params": ["crypto_latest_price"]
+}
+```
+
+The server acknowledges the subscription and begins pushing updates immediately. The JavaScript example below connects and subscribes to live price updates for Bitcoin and Ethereum:
+
+```javascript JavaScript
+const WebSocket = require("ws");
+
+const API_KEY = "YOUR_API_KEY";
+const WS_URL = `wss://push.coinmarketcap.com/ws?api_key=${API_KEY}`;
+
+const ws = new WebSocket(WS_URL);
+
+ws.on("open", () => {
+  console.log("Connected — subscribing to BTC and ETH price stream...");
+
+  // Subscribe to real-time price updates
+  ws.send(
+    JSON.stringify({
+      method: "SUBSCRIPTION",
+      params: ["crypto_latest_price"],
+    })
+  );
+});
+
+ws.on("message", (raw) => {
+  const msg = JSON.parse(raw);
+
+  // Filter for BTC (id=1) and ETH (id=1027)
+  const WATCHED_IDS = new Set([1, 1027]);
+
+  if (msg.id && WATCHED_IDS.has(msg.id)) {
+    const { symbol, price, percent_change_24h, last_updated } = msg;
+    const direction = percent_change_24h >= 0 ? "▲" : "▼";
+    console.log(
+      `[${last_updated}] ${symbol}: $${Number(price).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })} ${direction} ${Math.abs(percent_change_24h).toFixed(2)}%`
+    );
+  }
+});
+
+ws.on("error", (err) => console.error("Error:", err.message));
+ws.on("close", () => console.log("Connection closed."));
+```
+
+To subscribe to multiple channels simultaneously, list them all in the `params` array:
+
+```json
+{
+  "method": "SUBSCRIPTION",
+  "params": ["crypto_latest_price", "kline", "liquidity_event"]
+}
+```
+
+To unsubscribe from a channel without closing the connection, send the same message with `UNSUBSCRIPTION` as the method:
+
+```json
+{
+  "method": "UNSUBSCRIPTION",
+  "params": ["liquidity_event"]
+}
+```
+
+---
+
+## Handling Reconnections
+
+Production applications must handle disconnections gracefully. Network interruptions, server-side restarts, and idle timeouts can all drop the WebSocket connection. Implement exponential backoff so you don't hammer the server during outages, and send periodic heartbeat pings to keep the connection alive.
+
+The Python class below wraps the WebSocket connection with automatic reconnection logic, exponential backoff capped at 60 seconds, and a configurable ping interval:
+
+```python Python
+import asyncio
+import json
+import websockets
+from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
+
+API_KEY = "YOUR_API_KEY"
+WS_URL = f"wss://push.coinmarketcap.com/ws?api_key={API_KEY}"
+
+SUBSCRIBE_MSG = {
+    "method": "SUBSCRIPTION",
+    "params": ["crypto_latest_price"],
+}
+
+PING_INTERVAL = 20      # seconds between keepalive pings
+MAX_BACKOFF = 60        # maximum reconnection wait in seconds
+
+
+async def on_message(data: dict):
+    """Handle an incoming WebSocket message. Replace with your own logic."""
+    print(json.dumps(data))
+
+
+async def run_with_reconnect():
+    backoff = 1
+
+    while True:
+        try:
+            async with websockets.connect(
+                WS_URL,
+                ping_interval=PING_INTERVAL,
+                ping_timeout=10,
+            ) as ws:
+                print(f"Connected. Subscribing...")
+                await ws.send(json.dumps(SUBSCRIBE_MSG))
+                backoff = 1  # reset backoff on successful connection
+
+                async for raw in ws:
+                    await on_message(json.loads(raw))
+
+        except (ConnectionClosedError, ConnectionClosedOK) as e:
+            print(f"Connection closed ({e.code}: {e.reason}). Reconnecting in {backoff}s...")
+        except OSError as e:
+            print(f"Network error: {e}. Reconnecting in {backoff}s...")
+        except Exception as e:
+            print(f"Unexpected error: {e}. Reconnecting in {backoff}s...")
+
+        await asyncio.sleep(backoff)
+        backoff = min(backoff * 2, MAX_BACKOFF)  # exponential backoff
+
+
+if __name__ == "__main__":
+    asyncio.run(run_with_reconnect())
+```
+
+Key implementation notes:
+- **Reset backoff to 1 second** after a successful connection to avoid permanently slow reconnections after a single outage
+- **Use `ping_interval`** in the `websockets.connect` call — this handles the TCP keepalive at the library level without requiring a manual ping loop
+- **Log the close code and reason** — codes in the 4000–4999 range are CoinMarketCap-specific and may indicate authentication failures or rate limit violations
+
+<Tip>
+  Each CoinMarketCap account on **Startup, Growth, and Professional** plans supports up to **10 simultaneous WebSocket connections**. Use separate connections for logically distinct workloads (e.g., one for price streaming, one for DEX events) so that a slowdown in message processing on one connection does not delay the other.
+</Tip>

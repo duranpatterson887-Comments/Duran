@@ -1,0 +1,168 @@
+---
+title: "Cryptocurrency Metadata — Project Info & Logos"
+sidebarTitle: "Metadata"
+description: "Retrieve static project metadata for any cryptocurrency: official logos, descriptions, website URLs, social profiles, and blockchain platform details."
+---
+
+The metadata endpoint returns the rich, mostly-static information that defines a cryptocurrency project: its official logo, human-readable description, website and documentation links, social media profiles, source code repositories, and the blockchain platform it runs on. Because this data rarely changes, it is ideal to fetch it once and cache aggressively rather than requesting it on every page load.
+
+## Endpoint
+
+```
+GET /v2/cryptocurrency/info
+```
+
+## Parameters
+
+You must supply at least one of the identifier parameters below.
+
+<ParamField query="id" type="string">
+  One or more CoinMarketCap cryptocurrency IDs, comma-separated. Example: `"1027"` for Ethereum. The most stable identifier.
+</ParamField>
+
+<ParamField query="symbol" type="string">
+  One or more ticker symbols, comma-separated. Example: `"BTC,ETH"`. See the symbol-ambiguity note in the [Quotes](/api-reference/cryptocurrency/quotes) documentation if your use case demands precision.
+</ParamField>
+
+<ParamField query="slug" type="string">
+  One or more URL-friendly slugs, comma-separated. Example: `"bitcoin,ethereum"`.
+</ParamField>
+
+<ParamField query="address" type="string">
+  A smart-contract token address (e.g., an ERC-20 contract address on Ethereum). CoinMarketCap will resolve it to the matching asset automatically.
+</ParamField>
+
+<ParamField query="aux" type="string">
+  Comma-separated list of additional fields to include. Available options: `urls`, `logo`, `description`, `tags`, `platform`, `date_added`, `notice`, `status`. Defaults include `urls`, `logo`, and `description`. Specify only what you need to keep responses compact.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="data" type="object">
+  A map of asset ID strings to metadata objects.
+
+  <Expandable title="Metadata object fields">
+    <ResponseField name="id" type="integer">
+      The unique CoinMarketCap ID.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The full project name, e.g., `"Ethereum"`.
+    </ResponseField>
+    <ResponseField name="symbol" type="string">
+      The ticker symbol, e.g., `"ETH"`.
+    </ResponseField>
+    <ResponseField name="slug" type="string">
+      The URL-friendly identifier, e.g., `"ethereum"`.
+    </ResponseField>
+    <ResponseField name="logo" type="string">
+      A CDN-hosted URL pointing to the project's official logo image (PNG format, typically 64×64 or 200×200 px). Safe to display directly in applications.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      A paragraph-length plain-text description of the project, written and maintained by the CoinMarketCap team.
+    </ResponseField>
+    <ResponseField name="date_added" type="string">
+      ISO 8601 UTC timestamp recording when this asset was first listed on CoinMarketCap.
+    </ResponseField>
+    <ResponseField name="tags" type="array">
+      An array of category tag strings associated with this asset, e.g., `["smart-contracts", "layer-1", "pos"]`.
+    </ResponseField>
+    <ResponseField name="platform" type="object | null">
+      For tokens, the blockchain they run on. Contains `id`, `name`, `symbol`, `slug`, and `token_address`. `null` for native coins.
+    </ResponseField>
+    <ResponseField name="urls" type="object">
+      A collection of official URL arrays for the project.
+
+      <Expandable title="URL fields">
+        <ResponseField name="website" type="array">
+          Official project website(s).
+        </ResponseField>
+        <ResponseField name="twitter" type="array">
+          Official Twitter/X profile URL(s).
+        </ResponseField>
+        <ResponseField name="reddit" type="array">
+          Official subreddit URL(s).
+        </ResponseField>
+        <ResponseField name="source_code" type="array">
+          Source code repository URL(s), e.g., GitHub.
+        </ResponseField>
+        <ResponseField name="technical_doc" type="array">
+          Whitepaper or technical documentation URL(s).
+        </ResponseField>
+        <ResponseField name="chat" type="array">
+          Community chat URLs (e.g., Discord, Telegram).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  "https://pro-api.coinmarketcap.com/v2/cryptocurrency/info?id=1027"
+```
+
+## Example Response
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-15T15:00:00.000Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 14,
+    "credit_count": 1,
+    "notice": null
+  },
+  "data": {
+    "1027": {
+      "id": 1027,
+      "name": "Ethereum",
+      "symbol": "ETH",
+      "slug": "ethereum",
+      "logo": "https://s2.coinmarketcap.com/static/img/coins/200x200/1027.png",
+      "description": "Ethereum is a decentralized, open-source blockchain with smart contract functionality. Ether (ETH) is the native cryptocurrency of the platform. Amongst cryptocurrencies, Ether is second only to Bitcoin in market capitalization. Ethereum was conceived in 2013 by programmer Vitalik Buterin.",
+      "date_added": "2015-08-07T00:00:00.000Z",
+      "tags": [
+        "pos",
+        "smart-contracts",
+        "ethereum-ecosystem",
+        "layer-1",
+        "evm-compatible"
+      ],
+      "platform": null,
+      "category": "coin",
+      "notice": null,
+      "urls": {
+        "website": [
+          "https://ethereum.org/"
+        ],
+        "technical_doc": [
+          "https://ethereum.org/en/whitepaper/"
+        ],
+        "twitter": [
+          "https://twitter.com/ethereum"
+        ],
+        "reddit": [
+          "https://reddit.com/r/ethereum"
+        ],
+        "source_code": [
+          "https://github.com/ethereum"
+        ],
+        "chat": [
+          "https://discord.gg/ethereum-org"
+        ]
+      }
+    }
+  }
+}
+```
+
+<Tip>
+  Cache metadata responses for at least **24 hours**. Project names, logos, descriptions, and URLs change infrequently — re-fetching them on every page view wastes credits and adds latency. Store the results in your database or CDN and invalidate on a daily schedule.
+</Tip>
+
+<Note>
+  Logo images are served from CoinMarketCap's CDN (`s2.coinmarketcap.com`) and are safe to reference directly in `<img>` tags or mobile apps. The URLs are stable and do not require authentication. Logos are available in 64×64 and 200×200 px sizes — swap the resolution segment in the URL path to get the size you need.
+</Note>

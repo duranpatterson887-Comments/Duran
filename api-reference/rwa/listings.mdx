@@ -1,0 +1,269 @@
+---
+title: "Real World Assets — Tokenized Asset Listings"
+sidebarTitle: "RWA"
+description: "Track tokenized real-world assets — treasuries, real estate, commodities, and private credit — with CMC's dedicated RWA data endpoints."
+---
+
+Tokenized real-world assets (RWAs) represent one of the fastest-growing sectors in crypto, bridging on-chain capital markets with traditional financial instruments. CoinMarketCap's RWA endpoints let you track the full landscape: tokenized US Treasury bills, real-estate-backed tokens, commodity instruments, and private credit products — complete with on-chain TVL, yield data, issuer attribution, and contract addresses across multiple blockchains. Whether you are building a yield aggregator, a compliance dashboard, or an institutional research tool, these endpoints give you structured, up-to-date RWA intelligence.
+
+---
+
+## RWA Listings
+
+```
+GET https://pro-api.coinmarketcap.com/v1/rwa/listings/latest
+```
+
+Returns a paginated list of all RWA tokens tracked by CoinMarketCap, with market and yield data. Sort and filter by asset category to isolate the verticals most relevant to your use case.
+
+### Request Parameters
+
+<ParamField query="start" type="integer" default="1">
+  Pagination offset. Combine with `limit` to walk through the full listings set.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="100">
+  Number of listings to return per call.
+</ParamField>
+
+<ParamField query="convert" type="string" default="USD">
+  Currency in which to express price and market cap values. Accepts any currency code supported by CoinMarketCap.
+</ParamField>
+
+<ParamField query="sort" type="string" default="market_cap">
+  Field to sort results by. Accepted values:
+
+  - `market_cap` — sort by fully diluted market capitalization (default)
+  - `tvl` — sort by total value locked on-chain
+  - `volume_24h` — sort by 24-hour trading volume
+</ParamField>
+
+<ParamField query="category" type="string" default="all">
+  Filter results to a specific RWA vertical. Accepted values:
+
+  - `all` — all tracked RWA tokens (default)
+  - `treasury` — tokenized government bonds and T-bills (e.g., BUIDL, USDY, OUSG)
+  - `real_estate` — tokenized real-estate products
+  - `commodities` — tokenized gold, silver, oil, and other commodities
+  - `private_credit` — tokenized private credit and debt instruments
+</ParamField>
+
+### Response Fields
+
+<ResponseField name="status" type="object">
+  Standard CMC response envelope.
+  <Expandable title="status fields">
+    <ResponseField name="timestamp" type="string">ISO 8601 response timestamp.</ResponseField>
+    <ResponseField name="error_code" type="integer">0 on success.</ResponseField>
+    <ResponseField name="credit_count" type="integer">API credits consumed.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of RWA token objects.
+  <Expandable title="RWA token fields">
+    <ResponseField name="id" type="integer">
+      CoinMarketCap's unique asset ID.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Full token name (e.g., `"BlackRock USD Institutional Digital Liquidity Fund"`).
+    </ResponseField>
+    <ResponseField name="symbol" type="string">
+      Token ticker symbol (e.g., `"BUIDL"`).
+    </ResponseField>
+    <ResponseField name="slug" type="string">
+      URL-friendly identifier.
+    </ResponseField>
+    <ResponseField name="category" type="string">
+      RWA vertical classification: `treasury`, `real_estate`, `commodities`, or `private_credit`.
+    </ResponseField>
+    <ResponseField name="issuer" type="string">
+      Name of the entity that issued and manages the token (e.g., `"BlackRock"`, `"Ondo Finance"`).
+    </ResponseField>
+    <ResponseField name="tvl" type="number">
+      Total value locked — the aggregate USD value of real-world assets backing the token's circulating supply.
+    </ResponseField>
+    <ResponseField name="apy" type="number">
+      Annualized percentage yield currently offered to token holders, where applicable.
+    </ResponseField>
+    <ResponseField name="blockchain" type="string">
+      Primary blockchain on which the token is issued (e.g., `"Ethereum"`, `"Stellar"`, `"Solana"`).
+    </ResponseField>
+    <ResponseField name="contract_address" type="string">
+      On-chain smart contract address of the token on its primary blockchain.
+    </ResponseField>
+    <ResponseField name="price" type="number">
+      Current token price in the requested `convert` currency.
+    </ResponseField>
+    <ResponseField name="market_cap" type="number">
+      Market capitalization in the requested `convert` currency.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## RWA Asset Metadata
+
+```
+GET https://pro-api.coinmarketcap.com/v1/rwa/assets/latest
+```
+
+Returns detailed metadata for specific RWA assets — useful when you need issuer documents, supported blockchain networks, custody arrangements, or regulatory disclosures associated with individual tokens.
+
+### Request Parameters
+
+<ParamField query="start" type="integer" default="1">
+  Pagination offset.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="100">
+  Number of asset records to return.
+</ParamField>
+
+---
+
+## RWA Issuers
+
+```
+GET https://pro-api.coinmarketcap.com/v1/rwa/issuers/latest
+```
+
+Returns a directory of RWA token issuers — institutions, DAOs, and fintechs that have tokenized real-world assets on-chain — along with their product lineups and aggregate TVL.
+
+### Request Parameters
+
+<ParamField query="start" type="integer" default="1">
+  Pagination offset.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="100">
+  Number of issuers to return.
+</ParamField>
+
+### Response Fields
+
+<ResponseField name="data" type="array">
+  Array of issuer objects.
+  <Expandable title="issuer fields">
+    <ResponseField name="name" type="string">
+      Legal or brand name of the issuer (e.g., `"Ondo Finance"`, `"Franklin Templeton"`).
+    </ResponseField>
+    <ResponseField name="website" type="string">
+      Official website URL of the issuer.
+    </ResponseField>
+    <ResponseField name="products" type="array">
+      List of tokenized products offered by this issuer, each containing `symbol`, `name`, `category`, and `tvl`.
+    </ResponseField>
+    <ResponseField name="total_tvl" type="number">
+      Aggregate USD TVL across all of the issuer's tracked on-chain products.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+
+```bash Tokenized Treasuries — cURL
+curl -s \
+  --url "https://pro-api.coinmarketcap.com/v1/rwa/listings/latest?category=treasury&sort=tvl&limit=5&convert=USD" \
+  --header "X-CMC_PRO_API_KEY: YOUR_API_KEY"
+```
+
+```bash RWA Issuers — cURL
+curl -s \
+  --url "https://pro-api.coinmarketcap.com/v1/rwa/issuers/latest?limit=5" \
+  --header "X-CMC_PRO_API_KEY: YOUR_API_KEY"
+```
+
+```python Python
+import requests
+
+headers = {"X-CMC_PRO_API_KEY": "YOUR_API_KEY"}
+
+# Top tokenized treasury products by TVL
+listings = requests.get(
+    "https://pro-api.coinmarketcap.com/v1/rwa/listings/latest",
+    headers=headers,
+    params={"category": "treasury", "sort": "tvl", "limit": 5, "convert": "USD"}
+)
+
+# Issuer directory
+issuers = requests.get(
+    "https://pro-api.coinmarketcap.com/v1/rwa/issuers/latest",
+    headers=headers,
+    params={"limit": 5}
+)
+
+print(listings.json())
+print(issuers.json())
+```
+
+</CodeGroup>
+
+### Response — `/v1/rwa/listings/latest` (category=treasury)
+
+```json
+{
+  "status": {
+    "timestamp": "2025-01-15T15:30:00.000Z",
+    "error_code": 0,
+    "credit_count": 1
+  },
+  "data": [
+    {
+      "id": 29835,
+      "name": "BlackRock USD Institutional Digital Liquidity Fund",
+      "symbol": "BUIDL",
+      "slug": "blackrock-usd-institutional-digital-liquidity-fund",
+      "category": "treasury",
+      "issuer": "BlackRock",
+      "tvl": 648200000,
+      "apy": 5.10,
+      "blockchain": "Ethereum",
+      "contract_address": "0x7712c34205737192402172409a8F7ccef8aA2AEc",
+      "price": 1.00,
+      "market_cap": 648200000
+    },
+    {
+      "id": 28473,
+      "name": "Ondo US Dollar Yield",
+      "symbol": "USDY",
+      "slug": "ondo-us-dollar-yield",
+      "category": "treasury",
+      "issuer": "Ondo Finance",
+      "tvl": 412500000,
+      "apy": 5.20,
+      "blockchain": "Solana",
+      "contract_address": "A1KLoBrKBde8Ty9qtNQUtq3C2ortoC3u7twggz7sEto6",
+      "price": 1.056,
+      "market_cap": 412500000
+    },
+    {
+      "id": 26820,
+      "name": "Franklin OnChain US Government Money Fund",
+      "symbol": "BENJI",
+      "slug": "franklin-onchain-us-government-money-fund",
+      "category": "treasury",
+      "issuer": "Franklin Templeton",
+      "tvl": 375100000,
+      "apy": 4.98,
+      "blockchain": "Stellar",
+      "contract_address": "GAHJJJKMOKYE4RVPZEWZTKH5FVI4PA3VL7GK2LFNUBSGBV3CVXPXIP2",
+      "price": 1.00,
+      "market_cap": 375100000
+    }
+  ]
+}
+```
+
+<Tip>
+  **Track vertical-level growth with the `category` filter.** Querying `category=treasury` and recording `tvl` over time lets you chart the explosive growth of tokenized US Treasuries as a category — currently the largest RWA vertical by on-chain value. Swap in `category=real_estate` or `category=private_credit` to monitor emerging verticals as institutional adoption broadens into new asset classes.
+</Tip>
+
+<Note>
+  The RWA endpoints are newer additions to the CoinMarketCap API, and the breadth of fields returned may expand as issuer coverage grows. Pass the `aux` query parameter with a comma-separated list of auxiliary field names (e.g., `aux=contract_address,apy,blockchain`) to explicitly request all available supplementary fields in your response. Check the changelog for newly supported `aux` values as the RWA dataset matures.
+</Note>

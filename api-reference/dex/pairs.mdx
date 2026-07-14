@@ -1,0 +1,174 @@
+---
+title: "DEX Pairs — Live Trading Pair Quotes"
+sidebarTitle: "Pairs"
+description: "Fetch real-time price, volume, and liquidity data for specific DEX trading pairs by contract address across any supported blockchain network."
+---
+
+Every on-chain swap happens inside a trading pair contract, and this endpoint gives you live, tick-fresh quotes straight from those pools. By supplying one or more pair contract addresses alongside the target network, you can retrieve real-time price in USD and native token terms, 24-hour volume, total liquidity depth, and transaction counts — all the signals you need to assess market health and execution quality before placing a trade.
+
+## Endpoint
+
+<ParamField path="GET /v4/dex/pairs/quotes/latest" type="string">
+  Retrieve live quotes for one or more DEX trading pairs by contract address.
+</ParamField>
+
+**Base URL:** `https://pro-api.coinmarketcap.com`
+
+**Authentication:** Pass your API key in the `X-CMC_PRO_API_KEY` request header.
+
+---
+
+## Request Parameters
+
+<ParamField query="address" type="string" required>
+  The contract address of the trading pair you want to query. To batch multiple pairs in a single request, provide a comma-separated list of addresses (e.g., `0xabc...,0xdef...`).
+</ParamField>
+
+<ParamField query="network_slug" type="string" required>
+  The blockchain network on which the pair exists. Examples: `ethereum`, `base`, `solana`, `bsc`, `arbitrum`, `polygon`.
+</ParamField>
+
+<ParamField query="convert" type="string">
+  Return price and volume figures converted into an additional fiat or cryptocurrency. Supply an ISO 4217 currency code (e.g., `EUR`, `GBP`) or a CoinMarketCap cryptocurrency symbol (e.g., `BTC`).
+</ParamField>
+
+<ParamField query="aux" type="string">
+  Comma-separated list of supplementary fields to include in the response. Available options:
+
+  | Field | Description |
+  |-------|-------------|
+  | `liquidity` | Total liquidity depth in USD |
+  | `volume_24h` | 24-hour swap volume in USD |
+  | `price_change_24h` | Absolute price change over the last 24 hours |
+  | `tx_count_24h` | Number of swaps executed in the last 24 hours |
+</ParamField>
+
+---
+
+## Response Fields
+
+<ResponseField name="data" type="object">
+  <Expandable title="Pair quote object">
+    <ResponseField name="pair_address" type="string">
+      The on-chain contract address of the trading pair.
+    </ResponseField>
+    <ResponseField name="base_token" type="object">
+      <Expandable title="Base token details">
+        <ResponseField name="address" type="string">
+          Contract address of the base token in the pair.
+        </ResponseField>
+        <ResponseField name="symbol" type="string">
+          Ticker symbol of the base token (e.g., `ETH`).
+        </ResponseField>
+        <ResponseField name="name" type="string">
+          Full display name of the base token (e.g., `Ethereum`).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="quote_token" type="object">
+      <Expandable title="Quote token details">
+        <ResponseField name="address" type="string">
+          Contract address of the quote token in the pair.
+        </ResponseField>
+        <ResponseField name="symbol" type="string">
+          Ticker symbol of the quote token (e.g., `USDC`).
+        </ResponseField>
+        <ResponseField name="name" type="string">
+          Full display name of the quote token (e.g., `USD Coin`).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="price_usd" type="number">
+      Current price of the base token denominated in USD, derived from the on-chain pool ratio.
+    </ResponseField>
+    <ResponseField name="price_native" type="number">
+      Current price of the base token expressed in units of the quote token (i.e., the native pool price).
+    </ResponseField>
+    <ResponseField name="volume_24h" type="number">
+      Total swap volume through this specific pair in USD over the past 24 hours.
+    </ResponseField>
+    <ResponseField name="liquidity_usd" type="number">
+      Total value of assets locked in this pool, expressed in USD.
+    </ResponseField>
+    <ResponseField name="tx_count_24h" type="integer">
+      Number of individual swap transactions executed in this pair over the past 24 hours.
+    </ResponseField>
+    <ResponseField name="last_updated" type="string">
+      ISO 8601 timestamp of the most recent data update for this pair.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --request GET \
+  --url "https://pro-api.coinmarketcap.com/v4/dex/pairs/quotes/latest?address=0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640&network_slug=ethereum&aux=liquidity,volume_24h,price_change_24h,tx_count_24h" \
+  --header "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  --header "Accept: application/json"
+```
+
+```python Python
+import requests
+
+url = "https://pro-api.coinmarketcap.com/v4/dex/pairs/quotes/latest"
+headers = {
+    "X-CMC_PRO_API_KEY": "YOUR_API_KEY",
+    "Accept": "application/json",
+}
+params = {
+    # Uniswap V3 USDC/ETH 0.05% pool on Ethereum
+    "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+    "network_slug": "ethereum",
+    "aux": "liquidity,volume_24h,price_change_24h,tx_count_24h",
+}
+
+response = requests.get(url, headers=headers, params=params)
+data = response.json()
+print(data)
+```
+
+</CodeGroup>
+
+### Sample Response
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-15T10:45:00.000Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 11,
+    "credit_count": 1
+  },
+  "data": {
+    "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640": {
+      "pair_address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+      "base_token": {
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH",
+        "name": "Wrapped Ether"
+      },
+      "quote_token": {
+        "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC",
+        "name": "USD Coin"
+      },
+      "price_usd": 3241.87,
+      "price_native": 3241.872918,
+      "volume_24h": 412830941.22,
+      "liquidity_usd": 189203847.50,
+      "tx_count_24h": 48312,
+      "last_updated": "2024-11-15T10:44:52.000Z"
+    }
+  }
+}
+```
+
+<Note>
+  A pair contract address is unique to a specific DEX **and** network. The same two tokens (e.g., WETH/USDC) will have different pair addresses on Uniswap V2, Uniswap V3, and SushiSwap — and different addresses again on Base versus Ethereum. Always supply the correct `network_slug` alongside the pair address to ensure accurate results.
+</Note>

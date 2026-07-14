@@ -1,0 +1,124 @@
+---
+title: "Plans & Credits: Pricing and Usage Guide"
+sidebarTitle: "Plans & Credits"
+description: "Understand CoinMarketCap's credit-based pricing, compare plans from free to Enterprise, and learn how to monitor and manage your monthly usage."
+---
+
+CoinMarketCap's API runs on a **credit-based pricing model** — every successful API call consumes a set number of credits, and your monthly plan determines how many credits you have available. This design gives you full transparency into your API spend: you always know exactly how much each call costs, and you can predict your bill from your usage patterns. Whether you're prototyping on the free tier or running a professional trading platform at scale, there's a plan sized for you — and you can upgrade at any time as your data needs grow.
+
+<Tip>
+  Start with the free **Basic plan** to prototype without spending a cent. You get 15,000 credits per month — enough to make hundreds of price-quote calls daily — with no credit card required. Sign up at [pro.coinmarketcap.com/signup](https://pro.coinmarketcap.com/signup).
+</Tip>
+
+## Plan Comparison
+
+<Note>
+  All credit and rate-limit figures represent monthly allocations on the default billing cycle. See [Annual Savings](#annual-savings) for discount information.
+</Note>
+
+| Plan | Monthly Price | Credits / mo | Rate Limit | WebSocket | Historical Data |
+|---|---|---|---|---|---|
+| **Keyless** | Free, no signup | Limited | 10 req / min | No | Limited |
+| **Basic** | Free | 15,000 | 50 req / min | No | 1 year |
+| **Builder** | $29 / mo | 150,000 | 300 req / min | No | 3 years (daily) |
+| **Startup** | $79 / mo | 450,000 | 600 req / min | Yes (10 connections) | All-time |
+| **Growth** | $299 / mo | 2,000,000 | 750 req / min | Yes (10 connections) | All-time |
+| **Professional** | $699 / mo | 5,000,000 | 1,200 req / min | Yes (10 connections) | All-time |
+| **Enterprise** | Custom | 30,000,000+ | 1,600+ req / min | Custom | All-time |
+
+Visit [pro.coinmarketcap.com](https://pro.coinmarketcap.com) to compare full feature breakdowns and upgrade your plan.
+
+## How Credits Work
+
+Every response from the CoinMarketCap API includes a `credit_count` field in the `status` object, showing exactly how many credits that call consumed.
+
+```json
+{
+  "status": {
+    "timestamp": "2025-01-15T12:00:00.000Z",
+    "error_code": 0,
+    "credit_count": 1,
+    "elapsed": 14
+  },
+  "data": { ... }
+}
+```
+
+Credit costs vary by endpoint category and data richness:
+
+| Endpoint Category | Typical Credit Cost |
+|---|---|
+| Cryptocurrency quotes (latest) | 1 credit per call |
+| Cryptocurrency listings (latest) | 1 credit per call |
+| Global metrics (latest) | 1 credit per call |
+| OHLCV data (latest) | 1 credit per call |
+| OHLCV data (historical) | 1 credit per interval returned |
+| Cryptocurrency metadata | 1 credit per 100 tokens |
+| Market pairs | 1 credit per 100 results |
+| DEX pairs & pools | 1 credit per call |
+| On-chain data | Varies by endpoint |
+
+<Info>
+  Credits are **not** deducted for failed requests that return authentication errors (error codes `1001`, `1002`, `1006`) or for requests that are rejected before processing. You only pay for successful data responses.
+</Info>
+
+### Credit Consumption Example
+
+If you build a dashboard that polls BTC, ETH, and SOL prices every 60 seconds, you're making 3 calls per minute × 60 minutes × 24 hours = **4,320 credits per day** — well within the Basic plan's 15,000-credit monthly allowance.
+
+For a production app polling 100 symbols every 30 seconds, you'd consume roughly 100 credits per minute × 43,200 minutes/month = **4,320,000 credits/month**, which maps to the Growth or Professional tier.
+
+## Monitoring Your Usage
+
+Keep an eye on your credit consumption directly in the CoinMarketCap developer dashboard:
+
+<Steps>
+  <Step title="Open the dashboard">
+    Log in at [pro.coinmarketcap.com](https://pro.coinmarketcap.com) and navigate to **Dashboard → Usage**.
+  </Step>
+  <Step title="Review your credit balance">
+    The **Usage** panel shows your credits consumed this month, your remaining balance, and a day-by-day consumption chart so you can spot spikes early.
+  </Step>
+  <Step title="Set usage alerts">
+    Configure email alerts to notify you when you reach 80% or 100% of your monthly credit allocation — preventing unexpected interruptions to your application.
+  </Step>
+  <Step title="Inspect per-endpoint breakdown">
+    The detailed usage log shows which endpoints consumed the most credits, helping you optimise your integration — for example, by caching responses or batching symbol queries.
+  </Step>
+</Steps>
+
+<Tip>
+  **Batch your requests** to stretch your credit allowance. The `/v2/cryptocurrency/quotes/latest` endpoint accepts a comma-separated list of symbols (`symbol=BTC,ETH,SOL,BNB`) and returns all of them for **1 credit** — far more efficient than individual calls per symbol.
+</Tip>
+
+## Annual Savings
+
+Switch to annual billing and save **20% on any paid plan**. The table below shows the effective monthly cost on an annual subscription.
+
+| Plan | Monthly Billing | Annual Billing | Annual Savings |
+|---|---|---|---|
+| Builder | $29 / mo | $23.20 / mo ($278.40 / yr) | $69.60 |
+| Startup | $79 / mo | $63.20 / mo ($758.40 / yr) | $189.60 |
+| Growth | $299 / mo | $239.20 / mo ($2,870.40 / yr) | $718.80 |
+| Professional | $699 / mo | $559.20 / mo ($6,710.40 / yr) | $1,677.60 |
+
+Select annual billing during checkout or switch at any time from the **Billing** section of your dashboard at [pro.coinmarketcap.com](https://pro.coinmarketcap.com).
+
+## Choosing the Right Plan
+
+<CardGroup cols={2}>
+  <Card title="Prototyping & Learning" icon="flask">
+    Start on the free **Basic plan**. 15,000 credits and 50 req/min cover dashboards, bots, and personal projects without any cost.
+  </Card>
+  <Card title="Growing Applications" icon="chart-line">
+    The **Builder** ($29/mo) or **Startup** ($79/mo) plans add deeper history and higher rate limits once your user base grows.
+  </Card>
+  <Card title="Production Platforms" icon="server">
+    **Growth** ($299/mo) and **Professional** ($699/mo) unlock WebSocket streaming, all-time historical data, and the throughput needed for real-time trading tools.
+  </Card>
+  <Card title="Institutional & Enterprise" icon="building">
+    Contact sales for a custom **Enterprise** plan with 30M+ credits, dedicated support, SLA guarantees, and custom rate limits.
+  </Card>
+</CardGroup>
+
+Ready to upgrade? Visit [pro.coinmarketcap.com](https://pro.coinmarketcap.com) to compare plans and start your subscription.

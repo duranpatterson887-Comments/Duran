@@ -1,0 +1,156 @@
+---
+title: "DEX Search — Find On-Chain Tokens and Pairs"
+sidebarTitle: "Search"
+description: "Search across all CoinMarketCap-tracked DEXes to instantly locate on-chain tokens and trading pairs by name, symbol, or contract address."
+---
+
+Searching the on-chain universe is the fastest way to discover tokens and trading pairs across every DEX that CoinMarketCap tracks. Whether you're hunting down a newly launched meme coin by symbol, verifying a contract address before trading, or scouting liquidity for a specific asset on a particular chain, this endpoint delivers ranked results with live price and volume context in a single call.
+
+## Endpoint
+
+<ParamField path="GET /v4/dex/search" type="string">
+  Search for on-chain tokens and trading pairs across all tracked DEXes.
+</ParamField>
+
+**Base URL:** `https://pro-api.coinmarketcap.com`
+
+**Authentication:** Pass your API key in the `X-CMC_PRO_API_KEY` request header.
+
+---
+
+## Request Parameters
+
+<ParamField query="keyword" type="string" required>
+  The search term to match against token names, symbols, or contract addresses. For example, `PEPE`, `Pepe`, or `0x6982508145454Ce325dDbE47a25d4ec3d2311933`.
+</ParamField>
+
+<ParamField query="network_slug" type="string">
+  Narrow results to a single blockchain network. Accepted values:
+
+  | Value | Network |
+  |-------|---------|
+  | `ethereum` | Ethereum Mainnet |
+  | `base` | Base (Coinbase L2) |
+  | `solana` | Solana |
+  | `bsc` | BNB Smart Chain |
+  | `arbitrum` | Arbitrum One |
+  | `polygon` | Polygon PoS |
+
+  Omit this parameter to search across all supported networks simultaneously.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Maximum number of results to return. Defaults to `20`. Maximum value is `100`.
+</ParamField>
+
+---
+
+## Response Fields
+
+<ResponseField name="data" type="array">
+  <Expandable title="Token / Pair result object">
+    <ResponseField name="address" type="string">
+      The contract address of the token or trading pair on its native network.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Full display name of the token (e.g., `Pepe`).
+    </ResponseField>
+    <ResponseField name="symbol" type="string">
+      Ticker symbol of the token (e.g., `PEPE`).
+    </ResponseField>
+    <ResponseField name="network" type="string">
+      The blockchain network slug where this token or pair lives (e.g., `ethereum`).
+    </ResponseField>
+    <ResponseField name="dex" type="string">
+      The DEX on which this pair is primarily tracked (e.g., `uniswap-v2`).
+    </ResponseField>
+    <ResponseField name="price_usd" type="number">
+      Current token price denominated in USD.
+    </ResponseField>
+    <ResponseField name="volume_24h" type="number">
+      Aggregated 24-hour trading volume in USD across all tracked pairs for this token.
+    </ResponseField>
+    <ResponseField name="liquidity_usd" type="number">
+      Total on-chain liquidity in USD pooled across all DEX pairs for this token.
+    </ResponseField>
+    <ResponseField name="pair_count" type="integer">
+      Number of active trading pairs found for this token across tracked DEXes.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl --request GET \
+  --url "https://pro-api.coinmarketcap.com/v4/dex/search?keyword=PEPE&network_slug=ethereum&limit=20" \
+  --header "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+  --header "Accept: application/json"
+```
+
+```python Python
+import requests
+
+url = "https://pro-api.coinmarketcap.com/v4/dex/search"
+headers = {
+    "X-CMC_PRO_API_KEY": "YOUR_API_KEY",
+    "Accept": "application/json",
+}
+params = {
+    "keyword": "PEPE",
+    "network_slug": "ethereum",
+    "limit": 20,
+}
+
+response = requests.get(url, headers=headers, params=params)
+data = response.json()
+print(data)
+```
+
+</CodeGroup>
+
+### Sample Response
+
+```json
+{
+  "status": {
+    "timestamp": "2024-11-15T10:32:00.000Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 14,
+    "credit_count": 1
+  },
+  "data": [
+    {
+      "address": "0x6982508145454Ce325dDbE47a25d4ec3d2311933",
+      "name": "Pepe",
+      "symbol": "PEPE",
+      "network": "ethereum",
+      "dex": "uniswap-v2",
+      "price_usd": 0.00001842,
+      "volume_24h": 184920341.55,
+      "liquidity_usd": 47382910.00,
+      "pair_count": 38
+    },
+    {
+      "address": "0xa9e8acf069c58aec8fa1e6e56c07c53e36c2e9c9",
+      "name": "Pepe 2.0",
+      "symbol": "PEPE2.0",
+      "network": "ethereum",
+      "dex": "uniswap-v3",
+      "price_usd": 0.000000412,
+      "volume_24h": 2134872.10,
+      "liquidity_usd": 910234.88,
+      "pair_count": 4
+    }
+  ]
+}
+```
+
+<Tip>
+  When you already know the exact contract address of a token, pass it as the `keyword` value instead of the symbol. Contract addresses are globally unique per network, so you'll avoid ambiguous results caused by tokens sharing a common name or ticker symbol.
+</Tip>

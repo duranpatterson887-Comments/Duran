@@ -1,0 +1,239 @@
+---
+title: "CMC 20 & CMC 100 Index — Market Benchmarks"
+sidebarTitle: "CMC Indices"
+description: "Query live and historical values for the CMC 20 and CMC 100 indices — the crypto market's most-cited programmatic benchmarks."
+---
+
+Just as the S&P 500 gives equity investors a single number that represents broad market health, the CMC 20 and CMC 100 indices give crypto participants a transparent, rules-based benchmark for the digital asset market. Both indices are calculated from real-time CoinMarketCap price and market-cap data, rebalanced on a regular schedule, and available via API so you can embed benchmark performance directly into portfolio dashboards, research tools, or automated strategy systems.
+
+---
+
+## CMC 20 Index
+
+The CMC 20 tracks the **top 20 cryptocurrencies by market capitalization**, weighted and rebalanced periodically to reflect shifts in the landscape. It is the tightest, most liquid slice of the market — a useful benchmark for large-cap crypto exposure.
+
+### Latest Index Value
+
+```
+GET https://pro-api.coinmarketcap.com/v1/index/cmc20/latest
+```
+
+Returns the current CMC 20 index level, its 24-hour change, and the full constituent breakdown with individual weights.
+
+### Historical Index Values
+
+```
+GET https://pro-api.coinmarketcap.com/v1/index/cmc20/historical
+```
+
+Returns a time series of daily (or coarser) CMC 20 index values over a specified date range — useful for charting performance, calculating drawdowns, or backtesting benchmark-relative strategies.
+
+---
+
+## CMC 100 Index
+
+The CMC 100 expands the basket to **100 assets**, capturing mid-cap altcoins alongside the dominant large-caps. It serves as a broader benchmark for investors seeking diversified digital-asset exposure beyond Bitcoin and Ethereum.
+
+### Latest Index Value
+
+```
+GET https://pro-api.coinmarketcap.com/v1/index/cmc100/latest
+```
+
+### Historical Index Values
+
+```
+GET https://pro-api.coinmarketcap.com/v1/index/cmc100/historical
+```
+
+---
+
+## Request Parameters
+
+### `/latest` endpoints
+
+<ParamField query="convert" type="string" default="USD">
+  Return the index value and constituent prices in a specific currency. Accepts any currency symbol supported by CoinMarketCap (e.g., `USD`, `EUR`, `BTC`).
+</ParamField>
+
+### `/historical` endpoints
+
+<ParamField query="time_start" type="string">
+  Start of the date range in ISO 8601 format (e.g., `2024-01-01T00:00:00Z`). Defaults to 30 days before `time_end` when omitted.
+</ParamField>
+
+<ParamField query="time_end" type="string">
+  End of the date range in ISO 8601 format. Defaults to the current UTC timestamp when omitted.
+</ParamField>
+
+<ParamField query="interval" type="string" default="daily">
+  Granularity of data points in the returned time series. Accepted values:
+
+  - `daily` — one value per calendar day (default)
+  - `weekly` — one value per week
+  - `monthly` — one value per month
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Maximum number of data points to return. Combine with `time_start` / `time_end` for precise range control.
+</ParamField>
+
+---
+
+## Response Fields
+
+### `/latest` response
+
+<ResponseField name="status" type="object">
+  Standard CMC response envelope.
+  <Expandable title="status fields">
+    <ResponseField name="timestamp" type="string">Response generation timestamp (ISO 8601).</ResponseField>
+    <ResponseField name="error_code" type="integer">0 on success.</ResponseField>
+    <ResponseField name="credit_count" type="integer">API credits consumed by this call.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Current index snapshot.
+  <Expandable title="data fields">
+    <ResponseField name="value" type="number">
+      Current index level expressed as a unitless number (indexed from a base value at inception).
+    </ResponseField>
+    <ResponseField name="change_24h_pct" type="number">
+      Percentage change in the index level over the last 24 hours.
+    </ResponseField>
+    <ResponseField name="constituents" type="array">
+      Ordered list of assets that make up the index at the current rebalance.
+      <Expandable title="constituent fields">
+        <ResponseField name="id" type="integer">CoinMarketCap asset ID.</ResponseField>
+        <ResponseField name="symbol" type="string">Ticker symbol (e.g., `"BTC"`).</ResponseField>
+        <ResponseField name="weight" type="number">Percentage weight of this asset in the index (0–100).</ResponseField>
+        <ResponseField name="price" type="number">Current price in the requested `convert` currency.</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### `/historical` response
+
+<ResponseField name="data" type="object">
+  Historical time series container.
+  <Expandable title="data fields">
+    <ResponseField name="quotes" type="array">
+      Ordered array of index snapshots.
+      <Expandable title="quote fields">
+        <ResponseField name="timestamp" type="string">ISO 8601 date/time of this data point.</ResponseField>
+        <ResponseField name="value" type="number">Index level at the given timestamp.</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+
+```bash CMC 20 Latest — cURL
+curl -s \
+  --url "https://pro-api.coinmarketcap.com/v1/index/cmc20/latest?convert=USD" \
+  --header "X-CMC_PRO_API_KEY: YOUR_API_KEY"
+```
+
+```bash CMC 100 Historical — cURL
+curl -s \
+  --url "https://pro-api.coinmarketcap.com/v1/index/cmc100/historical?time_start=2024-01-01T00:00:00Z&time_end=2025-01-01T00:00:00Z&interval=monthly" \
+  --header "X-CMC_PRO_API_KEY: YOUR_API_KEY"
+```
+
+```python Python
+import requests
+
+headers = {"X-CMC_PRO_API_KEY": "YOUR_API_KEY"}
+
+# CMC 20 — current snapshot
+latest = requests.get(
+    "https://pro-api.coinmarketcap.com/v1/index/cmc20/latest",
+    headers=headers,
+    params={"convert": "USD"}
+)
+
+# CMC 100 — full-year monthly history
+historical = requests.get(
+    "https://pro-api.coinmarketcap.com/v1/index/cmc100/historical",
+    headers=headers,
+    params={
+        "time_start": "2024-01-01T00:00:00Z",
+        "time_end":   "2025-01-01T00:00:00Z",
+        "interval":   "monthly"
+    }
+)
+
+print(latest.json())
+print(historical.json())
+```
+
+</CodeGroup>
+
+### Response — `/v1/index/cmc20/latest`
+
+```json
+{
+  "status": {
+    "timestamp": "2025-01-15T15:00:00.000Z",
+    "error_code": 0,
+    "credit_count": 1
+  },
+  "data": {
+    "value": 14823.57,
+    "change_24h_pct": 2.94,
+    "constituents": [
+      {
+        "id": 1,
+        "symbol": "BTC",
+        "weight": 54.32,
+        "price": 97450.23
+      },
+      {
+        "id": 1027,
+        "symbol": "ETH",
+        "weight": 17.65,
+        "price": 3312.77
+      },
+      {
+        "id": 825,
+        "symbol": "USDT",
+        "weight": 4.88,
+        "price": 1.00
+      }
+    ]
+  }
+}
+```
+
+### Response — `/v1/index/cmc100/historical` (monthly interval)
+
+```json
+{
+  "status": {
+    "timestamp": "2025-01-15T15:00:00.000Z",
+    "error_code": 0,
+    "credit_count": 1
+  },
+  "data": {
+    "quotes": [
+      { "timestamp": "2024-01-01T00:00:00.000Z", "value": 6210.44 },
+      { "timestamp": "2024-02-01T00:00:00.000Z", "value": 7384.91 },
+      { "timestamp": "2024-03-01T00:00:00.000Z", "value": 9901.23 },
+      { "timestamp": "2024-04-01T00:00:00.000Z", "value": 9450.18 },
+      { "timestamp": "2024-11-01T00:00:00.000Z", "value": 13102.67 },
+      { "timestamp": "2024-12-01T00:00:00.000Z", "value": 14201.83 }
+    ]
+  }
+}
+```
+
+<Tip>
+  **Use the CMC 100 as a portfolio benchmark.** Pull monthly historical values for the same period as your portfolio's inception date, then calculate the percentage return of the CMC 100 over that window. Comparing your portfolio's performance against this 100-asset benchmark tells you whether your picks are generating genuine alpha or simply riding broad market beta — an essential metric for both discretionary investors and quantitative strategy evaluation.
+</Tip>

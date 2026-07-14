@@ -1,0 +1,155 @@
+---
+title: "API Rate Limits and Throttling Strategies"
+sidebarTitle: "Rate Limits"
+description: "Understand CoinMarketCap's per-plan rate limits, response headers, 429 handling with exponential backoff, and caching best practices to keep your app fast."
+---
+
+CoinMarketCap enforces per-minute rate limits on every API plan to ensure consistent, high-quality data delivery for all developers on the platform. These limits are designed to be generous for the intended use case of each tier — understanding them upfront lets you architect your integration to stay well within bounds and avoid unexpected disruptions in production.
+
+## Rate Limits by Plan
+
+Each plan's limit applies to the number of API calls you can make within any rolling 60-second window.
+
+| Plan | Calls per Minute | Recommended Poll Interval |
+|------|-----------------|--------------------------|
+| Basic | 50 | 60 seconds |
+| Builder | 300 | 60 seconds |
+| Startup | 600 | 30 seconds |
+| Growth | 750 | 30 seconds |
+| Professional | 1,200 | 15 seconds |
+| Enterprise | 1,600+ | Custom |
+
+<Warning>
+  Repeatedly exceeding your plan's rate limit — especially through automated retry loops without backoff — can result in a **temporary suspension of your API key**. Always implement exponential backoff (see below) and monitor the `X-RateLimit-Remaining` header to stay within your allocation.
+</Warning>
+
+## Rate Limit Headers
+
+Every API response includes three headers that give you real-time visibility into your current rate limit status. Read these headers in every response handler to build a self-regulating client.
+
+| Header | Type | Description |
+|--------|------|-------------|
+| `X-RateLimit-Limit` | integer | Total calls allowed per minute on your current plan |
+| `X-RateLimit-Remaining` | integer | Calls remaining in the current 60-second window |
+| `X-RateLimit-Reset` | integer | Unix timestamp (seconds) when the current window resets |
+
+Use `X-RateLimit-Remaining` proactively: if it drops to single digits, pause your request loop and wait until `X-RateLimit-Reset` before continuing. This prevents a hard 429 error entirely.
+
+```python
+import requests
+import time
+
+response = requests.get(
+    "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest",
+    headers={"X-CMC_PRO_API_KEY": "YOUR_API_KEY"},
+    params={"id": "1,1027,825"}
+)
+
+remaining = int(response.headers.get("X-RateLimit-Remaining", 1))
+reset_at   = int(response.headers.get("X-RateLimit-Reset", 0))
+
+if remaining < 5:
+    sleep_for = max(0, reset_at - int(time.time())) + 1
+    print(f"Rate limit nearly exhausted — sleeping {sleep_for}s")
+    time.sleep(sleep_for)
+```
+
+## Handling 429 Errors
+
+When you exceed your rate limit, the API returns HTTP `429 Too Many Requests`. The correct response is to **stop sending requests immediately** and wait before retrying. Use an exponential backoff strategy with jitter so that multiple clients do not thundering-herd the API at the exact same reset moment.
+
+### Exponential Backoff in Python
+
+```python
+import requests
+import time
+import random
+
+BASE_URL = "https://pro-api.coinmarketcap.com"
+API_KEY  = "YOUR_API_KEY"
+
+def fetch_with_backoff(path: str, params: dict, max_retries: int = 5) -> dict:
+    """
+    Fetch a CMC endpoint with exponential backoff on 429 responses.
+    Raises RuntimeError after max_retries exhausted.
+    """
+    headers = {"X-CMC_PRO_API_KEY": API_KEY}
+
+    for attempt in range(max_retries):
+        response = requests.get(f"{BASE_URL}{path}", headers=headers, params=params)
+
+        if response.status_code == 200:
+            return response.json()
+
+        if response.status_code == 429:
+            # Exponential backoff: 2^attempt seconds, plus random jitter (0–1s)
+            wait = (2 ** attempt) + random.uniform(0, 1)
+            print(f"Rate limited (attempt {attempt + 1}/{max_retries}). "
+                  f"Retrying in {wait:.2f}s...")
+            time.sleep(wait)
+            continue
+
+        # Non-retryable errors (400, 401, 403) — fail fast
+        response.raise_for_status()
+
+    raise RuntimeError(f"Exceeded {max_retries} retries for {path}")
+
+
+# Usage
+data = fetch_with_backoff(
+    "/v2/cryptocurrency/quotes/latest",
+    params={"id": "1,1027,825", "convert": "USD"}
+)
+print(data)
+```
+
+The backoff sequence for up to 5 retries is approximately: **1s → 2s → 4s → 8s → 16s** (plus up to 1 second of jitter each time). This gives the rate-limit window time to reset without hammering the API.
+
+<Note>
+  Do **not** retry on `400 Bad Request` or `401 Unauthorized` — these indicate a problem with your request or API key that will not resolve on its own. Only retry on `429` and transient `5xx` server errors.
+</Note>
+
+## Best Practices
+
+Following a few straightforward patterns dramatically reduces your rate limit exposure and improves end-user response times simultaneously.
+
+### Cache Responses
+
+The single most effective rate-limit strategy is **not making a call at all**. Store API responses locally and serve cached data to your users. Most cryptocurrency data does not change meaningfully within a 30–60 second window.
+
+<Tip>
+  Instead of calling the API on every user page-load to get the current BTC and ETH prices, fetch prices once every 60 seconds from a background job and store the result in Redis or a similar in-memory cache. Your users get sub-millisecond responses and you consume a tiny fraction of your rate limit budget.
+</Tip>
+
+Recommended cache TTLs:
+
+| Data Type | Basic / Builder TTL | Startup+ TTL |
+|-----------|-------------------|--------------|
+| Price quotes | 60 seconds | 30 seconds |
+| Market listings | 5 minutes | 5 minutes |
+| Asset metadata (logo, description) | 24 hours | 24 hours |
+| Historical OHLCV | Indefinitely | Indefinitely |
+
+### Use Appropriate Polling Intervals
+
+Match your polling cadence to your plan tier. Basic and Builder plans support refreshing data no more often than once per minute without risk of hitting limits. Startup and above can poll every 30 seconds comfortably.
+
+- **Basic / Builder**: poll no faster than every **60 seconds**
+- **Startup / Growth**: poll no faster than every **30 seconds**
+- **Professional / Enterprise**: poll every **15 seconds** or configure a custom schedule
+
+### Batch Requests with Comma-Separated IDs
+
+Every time you fetch data for multiple assets, use a single batched call instead of a loop of individual calls. Pass a comma-separated list to the `id`, `symbol`, or `slug` parameter.
+
+```
+# ✅ One call, one credit — fetch BTC, ETH, and USDT together
+GET /v2/cryptocurrency/quotes/latest?id=1,1027,825
+
+# ❌ Three calls, three credits — avoid this pattern
+GET /v2/cryptocurrency/quotes/latest?id=1
+GET /v2/cryptocurrency/quotes/latest?id=1027
+GET /v2/cryptocurrency/quotes/latest?id=825
+```
+
+Batching up to **100 IDs per call** is supported on most endpoints. This alone can reduce your rate limit consumption by 2–3 orders of magnitude in applications that track large token watchlists.

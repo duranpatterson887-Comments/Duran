@@ -1,0 +1,163 @@
+---
+title: "Embeddable Crypto Widgets for Your Website"
+sidebarTitle: "Widgets"
+description: "Add live cryptocurrency prices, tickers, and market cap data to any website with CoinMarketCap's free embeddable widgets."
+---
+
+CoinMarketCap's embeddable widgets let you display live cryptocurrency data on any website in minutes — no API key, no back-end code, and no account required. Copy a snippet, paste it into your HTML, and your visitors instantly see real-time prices, market caps, and exchange volumes powered by the world's most-referenced crypto data platform.
+
+## Available Widgets
+
+<CardGroup cols={2}>
+  <Card title="Ticker Tape" icon="tape">
+    A horizontally scrolling price ticker perfect for site headers and footers. Displays live prices and 24h change for a configurable list of assets.
+  </Card>
+  <Card title="Price Widget" icon="tag">
+    A compact price card for a single asset showing the current price, 24h percentage change, and a sparkline chart.
+  </Card>
+  <Card title="Market Cap Widget" icon="chart-bar">
+    Ranks the top N cryptocurrencies by market cap in a clean table format, updated in real time.
+  </Card>
+  <Card title="Exchange Volume Widget" icon="arrow-right-arrow-left">
+    Lists the top exchanges sorted by 24h trading volume, giving your audience an at-a-glance view of market activity.
+  </Card>
+</CardGroup>
+
+## Embed the Ticker Tape
+
+<Steps>
+  <Step title="Open the widget builder">
+    Navigate to [coinmarketcap.com/widget/](https://coinmarketcap.com/widget/) and select **Ticker Tape** from the widget menu.
+  </Step>
+  <Step title="Customize your widget">
+    Use the configuration panel to:
+    - Select the assets you want to display (e.g., BTC, ETH, SOL, BNB)
+    - Choose your fiat conversion currency (e.g., USD, EUR, GBP)
+    - Pick a theme: **light** or **dark**
+    - Set the width to match your site's layout
+  </Step>
+  <Step title="Copy and paste the embed code">
+    Click **Get Code** and paste the generated snippet into your website's HTML wherever you want the ticker to appear.
+  </Step>
+</Steps>
+
+Here is an example of what the generated embed code looks like:
+
+```html
+<script
+  type="text/javascript"
+  src="https://files.coinmarketcap.com/static/widget/coinMarketCapTicker.js"
+></script>
+<div
+  id="coinmarketcap-widget-ticker-tape"
+  coins="1,1027,5426,825"
+  currency="USD"
+  theme="dark"
+  transparent="false"
+  show-symbol-logo="true"
+></div>
+```
+
+<Note>
+  No API key is required to use any CoinMarketCap widget. All widgets are free and publicly available through the widget builder.
+</Note>
+
+## Customization Options
+
+| Option | Values | Description |
+|--------|--------|-------------|
+| `coins` | Comma-separated CMC IDs | The assets to display (use CMC numeric IDs for precision, e.g., `1` for BTC) |
+| `currency` | e.g., `USD`, `EUR`, `GBP` | Fiat currency used for price conversion (default: `USD`) |
+| `theme` | `light` \| `dark` | Visual theme to match your site's color scheme |
+| `transparent` | `true` \| `false` | Renders the widget background as transparent when `true` |
+| `width` | Pixel value, e.g., `800` | Horizontal width of the widget in pixels |
+| `height` | Pixel value, e.g., `400` | Vertical height of the widget in pixels (where applicable) |
+
+## Widgets in React Apps
+
+React's JSX model doesn't allow third-party `<script>` tags to execute directly. Use one of the following approaches to embed CMC widgets in a React application.
+
+<Tabs>
+  <Tab title="iframe Embed">
+    The simplest approach — wrap the widget in an `<iframe>` pointing to a plain HTML file that contains the embed code:
+
+    ```jsx
+    export default function TickerWidget() {
+      return (
+        <iframe
+          src="/widgets/ticker.html"
+          width="100%"
+          height="80"
+          frameBorder="0"
+          scrolling="no"
+          title="CoinMarketCap Ticker"
+        />
+      );
+    }
+    ```
+
+    Create `public/widgets/ticker.html` with the standard CMC embed snippet inside a minimal HTML document.
+  </Tab>
+  <Tab title="dangerouslySetInnerHTML">
+    Inject the widget markup directly into a container `div` and load the script via a `useEffect` hook:
+
+    ```jsx
+    import { useEffect, useRef } from "react";
+
+    export default function TickerWidget() {
+      const containerRef = useRef(null);
+
+      useEffect(() => {
+        const script = document.createElement("script");
+        script.src =
+          "https://files.coinmarketcap.com/static/widget/coinMarketCapTicker.js";
+        script.async = true;
+        containerRef.current.appendChild(script);
+      }, []);
+
+      return (
+        <div
+          ref={containerRef}
+          id="coinmarketcap-widget-ticker-tape"
+          coins="1,1027,5426"
+          currency="USD"
+          theme="dark"
+          transparent="false"
+          show-symbol-logo="true"
+        />
+      );
+    }
+    ```
+  </Tab>
+  <Tab title="API (Full Control)">
+    For full control over rendering, styling, and data freshness, skip the widget script entirely and call the CoinMarketCap REST API directly:
+
+    ```jsx
+    import { useEffect, useState } from "react";
+
+    export default function PriceBanner() {
+      const [prices, setPrices] = useState([]);
+
+      useEffect(() => {
+        fetch("/api/crypto-prices") // your server-side proxy to CMC API
+          .then((r) => r.json())
+          .then((data) => setPrices(data));
+      }, []);
+
+      return (
+        <ul>
+          {prices.map((coin) => (
+            <li key={coin.id}>
+              {coin.symbol}: ${coin.quote.USD.price.toFixed(2)}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+  Combine widgets with the CoinMarketCap REST API to build a fully custom dashboard — use widgets for the public-facing display and the API for server-side analytics, alerting, and deeper historical data, all from the same data source your users already trust.
+</Tip>

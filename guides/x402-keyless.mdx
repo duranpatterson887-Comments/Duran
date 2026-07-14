@@ -1,0 +1,175 @@
+---
+title: "Make Keyless API Calls with x402 Payments"
+sidebarTitle: "Keyless API"
+description: "Call the CoinMarketCap API without signing up or managing API keys — pay $0.01 USDC per request on Base using the x402 protocol."
+---
+
+The x402 protocol lets you call CoinMarketCap's API without creating an account, generating an API key, or managing a subscription. Instead, each request is paid for individually with $0.01 USDC on the Base network, and the payment proof is attached directly to the HTTP request. This makes CoinMarketCap data accessible to AI agents running autonomously, serverless functions that spin up on demand, and any application where provisioning credentials in advance is impractical or undesirable.
+
+## How x402 Works
+
+x402 is an open HTTP payment protocol built on the `402 Payment Required` status code that HTTP originally reserved for micropayments. The flow is straightforward:
+
+1. **You send a normal `GET` request** to the x402-prefixed endpoint — no API key, no authorization header.
+2. **The server returns `HTTP 402`** with a `X-Payment-Required` header describing the payment: amount, currency, network, and recipient address.
+3. **Your client pays on Base** — a `$0.01 USDC` transfer to the specified address, producing a transaction hash.
+4. **You resubmit the request** with a `X-Payment` header containing the payment proof (transaction hash + signature).
+5. **The server validates the payment** on-chain and returns the API response with a `200 OK`.
+
+**Key properties of x402:**
+
+| Property | Detail |
+|----------|--------|
+| Cost per request | $0.01 USDC |
+| Payment network | Base (Ethereum L2) |
+| Rate limit | 30 requests per minute |
+| API key required | No |
+| Account required | No |
+| Ideal for | AI agents, micropayment apps, serverless functions, hackathon prototypes |
+
+Because there is no rate-limited free tier to exhaust and no credential rotation to manage, x402 is especially well-suited for **agentic workloads** — LLM-driven pipelines that call market data APIs on-demand without human intervention.
+
+---
+
+## Available x402 Endpoints
+
+All x402 endpoints are available at the same base URL as the standard API, under the `/x402/` path prefix:
+
+| Endpoint | Cost | Description |
+|----------|------|-------------|
+| `GET /x402/v3/cryptocurrency/quotes/latest` | $0.01 USDC | Live prices for one or more cryptocurrencies |
+| `GET /x402/v3/cryptocurrency/listing/latest` | $0.01 USDC | Paginated listing of all tracked cryptocurrencies |
+| `GET /x402/v4/dex/pairs/quotes/latest` | $0.01 USDC | Real-time DEX trading pair prices |
+| `GET /x402/v1/dex/search` | $0.01 USDC | Search for on-chain tokens by name, symbol, or address |
+| `GET /x402/mcp` | $0.01 USDC | Model Context Protocol endpoint for AI agent integrations |
+
+---
+
+## Making a Keyless Request
+
+### Understanding the 402 Flow
+
+The first step is always to probe the endpoint and receive the payment challenge. Here is the full two-step flow using `curl`:
+
+**Step 1 — Send the initial request and receive the 402 challenge:**
+
+```bash curl — Step 1: probe for payment details
+curl -v "https://pro-api.coinmarketcap.com/x402/v3/cryptocurrency/quotes/latest?symbol=BTC"
+# Returns HTTP 402 with payment instructions in the response headers:
+#
+# HTTP/2 402
+# x-payment-required: {"amount":"10000","currency":"USDC","network":"base","recipient":"0x..."}
+```
+
+**Step 2 — Pay on Base and resubmit with payment proof:**
+
+```bash curl — Step 2: resubmit with payment proof
+curl \
+  -H "X-Payment: {\"txHash\":\"0xabc123...\",\"payer\":\"0xYourWallet\"}" \
+  "https://pro-api.coinmarketcap.com/x402/v3/cryptocurrency/quotes/latest?symbol=BTC"
+```
+
+### Using the x402 JavaScript Client
+
+The `x402` npm package abstracts the two-step flow into a single function call. It handles the 402 probe, constructs and submits the on-chain payment using your wallet, and retries the request automatically.
+
+```javascript JavaScript (x402 client)
+import { createX402Client } from "x402";
+import { createWalletClient, http } from "viem";
+import { base } from "viem/chains";
+import { privateKeyToAccount } from "viem/accounts";
+
+// Configure your Base wallet (use env vars in production — never hard-code keys)
+const account = privateKeyToAccount(process.env.WALLET_PRIVATE_KEY);
+const walletClient = createWalletClient({
+  account,
+  chain: base,
+  transport: http(),
+});
+
+// Create a fetch client that handles 402 payments automatically
+const fetch402 = createX402Client({ walletClient });
+
+async function getBTCPrice() {
+  const response = await fetch402(
+    "https://pro-api.coinmarketcap.com/x402/v3/cryptocurrency/quotes/latest?symbol=BTC"
+  );
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const btc = data.data.BTC[0];
+  const price = btc.quote.USD.price;
+
+  console.log(`BTC price: $${price.toLocaleString("en-US", { minimumFractionDigits: 2 })}`);
+  return price;
+}
+
+getBTCPrice().catch(console.error);
+```
+
+### x402 in an AI Agent (LangChain Tool)
+
+The x402 model is a natural fit for AI agents that fetch live market data as part of a reasoning loop:
+
+```javascript JavaScript (AI agent tool)
+import { createX402Client } from "x402";
+import { DynamicTool } from "langchain/tools";
+import { createWalletClient, http } from "viem";
+import { base } from "viem/chains";
+import { privateKeyToAccount } from "viem/accounts";
+
+const account = privateKeyToAccount(process.env.WALLET_PRIVATE_KEY);
+const walletClient = createWalletClient({ account, chain: base, transport: http() });
+const fetch402 = createX402Client({ walletClient });
+
+export const cryptoPriceTool = new DynamicTool({
+  name: "get_crypto_price",
+  description: "Fetch the current USD price for a cryptocurrency symbol, e.g. BTC, ETH, SOL",
+  func: async (symbol) => {
+    const res = await fetch402(
+      `https://pro-api.coinmarketcap.com/x402/v3/cryptocurrency/quotes/latest?symbol=${symbol.toUpperCase()}`
+    );
+    const data = await res.json();
+    const asset = data.data[symbol.toUpperCase()][0];
+    const price = asset.quote.USD.price;
+    const change = asset.quote.USD.percent_change_24h;
+    return `${symbol.toUpperCase()} is currently $${price.toLocaleString()} (${change.toFixed(2)}% in 24h)`;
+  },
+});
+```
+
+---
+
+## Keyless Trial (Zero Cost)
+
+If you want to evaluate the CoinMarketCap API with real production data before setting up a Base wallet or purchasing USDC, use the **trial endpoint**:
+
+```
+https://pro-api.coinmarketcap.com/trial-pro-api
+```
+
+The trial endpoint requires **no payment and no API key**. Just call it directly:
+
+```bash curl
+curl "https://pro-api.coinmarketcap.com/trial-pro-api/v2/cryptocurrency/quotes/latest?symbol=BTC"
+```
+
+**Trial endpoint characteristics:**
+
+| Property | Detail |
+|----------|--------|
+| Cost | Free |
+| API key | Not required |
+| Data | Real production data |
+| Coverage | Selected endpoints only |
+| Rate limit | Shared trial pool (lower than paid tiers) |
+| Intended use | Evaluation and prototyping only |
+
+Once you are ready to move to production, switch to either a standard API key subscription or the x402 pay-per-request path — both use the same response schema, so no code changes are needed beyond swapping the base URL and authentication method.
+
+<Tip>
+  x402 is purpose-built for **AI agents running autonomously** — trading bots, portfolio rebalancers, DeFi monitors, and LLM-powered market analysts. Because payment is handled programmatically and there is no subscription to lapse or key to rotate, your agent can continue fetching live market data indefinitely as long as its wallet holds USDC. Seed the wallet with a few dollars of USDC on Base (transaction fees are a fraction of a cent) and your agent can make hundreds of calls without any human intervention.
+</Tip>

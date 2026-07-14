@@ -1,0 +1,290 @@
+---
+title: "DEX Tokens — On-Chain Token Price Data"
+sidebarTitle: "Tokens"
+description: "Fetch on-chain token prices, discover newly listed assets, track trending tokens, and surface top gainers aggregated across all DEXes on any network."
+---
+
+On-chain token data aggregates price, volume, and liquidity signals across every DEX pool a token appears in, giving you a unified market view that no single pool can provide on its own. Whether you want a live quote for a specific contract address, a feed of freshly launched tokens, or a real-time leaderboard of what's trending and gaining, these endpoints keep you connected to the full pulse of decentralized markets.
+
+## Endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/v4/dex/tokens/quotes/latest` | Live price quote for a token by contract address |
+| `GET` | `/v4/dex/tokens/new` | Recently listed tokens across tracked DEXes |
+| `GET` | `/v4/dex/tokens/trending` | Tokens ranked by volume and swap activity |
+| `GET` | `/v4/dex/tokens/gainers` | Top price gainers over the last 24 hours |
+
+**Base URL:** `https://pro-api.coinmarketcap.com`
+
+**Authentication:** Pass your API key in the `X-CMC_PRO_API_KEY` request header.
+
+---
+
+<Warning>
+  Many tokens surfaced by the **new**, **trending**, and **gainers** endpoints are meme coins or low-liquidity assets. Thin liquidity pools can cause significant price impact on even modest trade sizes. Always verify liquidity depth and pool age before acting on price data for unfamiliar tokens.
+</Warning>
+
+---
+
+<Tabs>
+  <Tab title="Quotes / Latest">
+
+    Retrieve a live, aggregated price quote for a specific on-chain token by its contract address. Prices are derived from the deepest liquidity pools on the specified network.
+
+    ### Request Parameters
+
+    <ParamField query="address" type="string" required>
+      The contract address of the token you want to quote (e.g., `0x6982508145454Ce325dDbE47a25d4ec3d2311933` for PEPE on Ethereum).
+    </ParamField>
+
+    <ParamField query="network_slug" type="string" required>
+      The blockchain network where the token is deployed. Examples: `ethereum`, `base`, `solana`, `bsc`, `arbitrum`, `polygon`.
+    </ParamField>
+
+    <ParamField query="convert" type="string">
+      Return quoted values in an additional fiat or crypto currency (e.g., `EUR`, `BTC`).
+    </ParamField>
+
+    ### Response Fields
+
+    <ResponseField name="price_usd" type="number">
+      Current token price in USD, weighted by pool liquidity across all tracked pairs.
+    </ResponseField>
+    <ResponseField name="price_change_24h_pct" type="number">
+      Percentage change in price over the last 24 hours.
+    </ResponseField>
+    <ResponseField name="volume_24h" type="number">
+      Total 24-hour swap volume in USD across all pairs for this token.
+    </ResponseField>
+    <ResponseField name="market_cap" type="number">
+      Circulating market capitalisation in USD (where supply data is available).
+    </ResponseField>
+    <ResponseField name="total_liquidity_usd" type="number">
+      Sum of USD liquidity provided across all on-chain pools for this token.
+    </ResponseField>
+    <ResponseField name="pair_count" type="integer">
+      Number of active trading pairs tracked for this token.
+    </ResponseField>
+    <ResponseField name="holder_count" type="integer">
+      Approximate number of unique wallet addresses holding this token (where available).
+    </ResponseField>
+
+    ### Example
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl --request GET \
+      --url "https://pro-api.coinmarketcap.com/v4/dex/tokens/quotes/latest?address=0x6982508145454Ce325dDbE47a25d4ec3d2311933&network_slug=ethereum" \
+      --header "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+      --header "Accept: application/json"
+    ```
+
+    ```python Python
+    import requests
+
+    url = "https://pro-api.coinmarketcap.com/v4/dex/tokens/quotes/latest"
+    headers = {"X-CMC_PRO_API_KEY": "YOUR_API_KEY"}
+    params = {
+        "address": "0x6982508145454Ce325dDbE47a25d4ec3d2311933",
+        "network_slug": "ethereum",
+    }
+    response = requests.get(url, headers=headers, params=params)
+    print(response.json())
+    ```
+
+    </CodeGroup>
+
+    ```json Sample Response
+    {
+      "status": {
+        "timestamp": "2024-11-15T11:00:00.000Z",
+        "error_code": 0,
+        "error_message": null,
+        "elapsed": 9,
+        "credit_count": 1
+      },
+      "data": {
+        "address": "0x6982508145454Ce325dDbE47a25d4ec3d2311933",
+        "name": "Pepe",
+        "symbol": "PEPE",
+        "network": "ethereum",
+        "price_usd": 0.00001842,
+        "price_change_24h_pct": 12.34,
+        "volume_24h": 184920341.55,
+        "market_cap": 7748291034.00,
+        "total_liquidity_usd": 47382910.00,
+        "pair_count": 38,
+        "holder_count": 289041
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab title="New Tokens">
+
+    Returns a reverse-chronological feed of tokens that have been newly listed or first detected across tracked DEXes. Use this endpoint to monitor the market for fresh launches.
+
+    ### Request Parameters
+
+    <ParamField query="network_slug" type="string">
+      Filter results to a specific blockchain network. Omit to receive new tokens across all supported networks.
+    </ParamField>
+
+    <ParamField query="limit" type="integer">
+      Number of tokens to return per page. Defaults to `20`, maximum `100`.
+    </ParamField>
+
+    <ParamField query="page" type="integer">
+      Page number for pagination. Defaults to `1`.
+    </ParamField>
+
+    ### Response Fields
+
+    Each object in the returned list includes:
+
+    <ResponseField name="address" type="string">Contract address of the token.</ResponseField>
+    <ResponseField name="name" type="string">Token display name.</ResponseField>
+    <ResponseField name="symbol" type="string">Token ticker symbol.</ResponseField>
+    <ResponseField name="network" type="string">Network slug where the token was detected.</ResponseField>
+    <ResponseField name="price_usd" type="number">Current price in USD.</ResponseField>
+    <ResponseField name="volume_24h" type="number">24-hour trading volume in USD.</ResponseField>
+    <ResponseField name="liquidity_usd" type="number">Total pool liquidity in USD.</ResponseField>
+    <ResponseField name="age" type="string">Human-readable time since the token's first detected on-chain activity (e.g., `2h`, `14m`).</ResponseField>
+
+    ### Example
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl --request GET \
+      --url "https://pro-api.coinmarketcap.com/v4/dex/tokens/new?network_slug=base&limit=20&page=1" \
+      --header "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+      --header "Accept: application/json"
+    ```
+
+    ```python Python
+    import requests
+
+    url = "https://pro-api.coinmarketcap.com/v4/dex/tokens/new"
+    headers = {"X-CMC_PRO_API_KEY": "YOUR_API_KEY"}
+    params = {"network_slug": "base", "limit": 20, "page": 1}
+    response = requests.get(url, headers=headers, params=params)
+    print(response.json())
+    ```
+
+    </CodeGroup>
+
+  </Tab>
+  <Tab title="Trending">
+
+    Returns tokens ranked by swap volume and on-chain activity over a rolling window. High activity often precedes broader market attention, making this feed valuable for early trend detection.
+
+    ### Request Parameters
+
+    <ParamField query="network_slug" type="string">
+      Filter to a specific blockchain network. Omit for cross-chain trending results.
+    </ParamField>
+
+    <ParamField query="limit" type="integer">
+      Number of trending tokens to return. Defaults to `20`, maximum `100`.
+    </ParamField>
+
+    <ParamField query="page" type="integer">
+      Page number for pagination. Defaults to `1`.
+    </ParamField>
+
+    ### Response Fields
+
+    Each object in the returned list includes:
+
+    <ResponseField name="address" type="string">Contract address of the token.</ResponseField>
+    <ResponseField name="name" type="string">Token display name.</ResponseField>
+    <ResponseField name="symbol" type="string">Token ticker symbol.</ResponseField>
+    <ResponseField name="network" type="string">Network slug.</ResponseField>
+    <ResponseField name="price_usd" type="number">Current price in USD.</ResponseField>
+    <ResponseField name="volume_24h" type="number">24-hour trading volume in USD.</ResponseField>
+    <ResponseField name="liquidity_usd" type="number">Total pool liquidity in USD.</ResponseField>
+    <ResponseField name="age" type="string">Time since first detected on-chain activity.</ResponseField>
+
+    ### Example
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl --request GET \
+      --url "https://pro-api.coinmarketcap.com/v4/dex/tokens/trending?network_slug=solana&limit=20" \
+      --header "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+      --header "Accept: application/json"
+    ```
+
+    ```python Python
+    import requests
+
+    url = "https://pro-api.coinmarketcap.com/v4/dex/tokens/trending"
+    headers = {"X-CMC_PRO_API_KEY": "YOUR_API_KEY"}
+    params = {"network_slug": "solana", "limit": 20}
+    response = requests.get(url, headers=headers, params=params)
+    print(response.json())
+    ```
+
+    </CodeGroup>
+
+  </Tab>
+  <Tab title="Gainers">
+
+    Returns tokens sorted by the largest positive price change over the last 24 hours. Pair this feed with liquidity and volume data to filter genuine moves from low-volume noise.
+
+    ### Request Parameters
+
+    <ParamField query="network_slug" type="string">
+      Filter to a specific blockchain network. Omit for cross-chain gainers.
+    </ParamField>
+
+    <ParamField query="limit" type="integer">
+      Number of top gainers to return. Defaults to `20`, maximum `100`.
+    </ParamField>
+
+    <ParamField query="page" type="integer">
+      Page number for pagination. Defaults to `1`.
+    </ParamField>
+
+    ### Response Fields
+
+    Each object in the returned list includes:
+
+    <ResponseField name="address" type="string">Contract address of the token.</ResponseField>
+    <ResponseField name="name" type="string">Token display name.</ResponseField>
+    <ResponseField name="symbol" type="string">Token ticker symbol.</ResponseField>
+    <ResponseField name="network" type="string">Network slug.</ResponseField>
+    <ResponseField name="price_usd" type="number">Current price in USD.</ResponseField>
+    <ResponseField name="volume_24h" type="number">24-hour trading volume in USD.</ResponseField>
+    <ResponseField name="liquidity_usd" type="number">Total pool liquidity in USD.</ResponseField>
+    <ResponseField name="age" type="string">Time since first detected on-chain activity.</ResponseField>
+
+    ### Example
+
+    <CodeGroup>
+
+    ```bash cURL
+    curl --request GET \
+      --url "https://pro-api.coinmarketcap.com/v4/dex/tokens/gainers?network_slug=ethereum&limit=20" \
+      --header "X-CMC_PRO_API_KEY: YOUR_API_KEY" \
+      --header "Accept: application/json"
+    ```
+
+    ```python Python
+    import requests
+
+    url = "https://pro-api.coinmarketcap.com/v4/dex/tokens/gainers"
+    headers = {"X-CMC_PRO_API_KEY": "YOUR_API_KEY"}
+    params = {"network_slug": "ethereum", "limit": 20}
+    response = requests.get(url, headers=headers, params=params)
+    print(response.json())
+    ```
+
+    </CodeGroup>
+
+  </Tab>
+</Tabs>

@@ -1,0 +1,124 @@
+---
+title: "CoinMarketCap MCP Server for AI IDEs"
+sidebarTitle: "MCP Server"
+description: "Connect CoinMarketCap's live crypto data to Cursor, Claude Code, Windsurf, and VS Code via the Model Context Protocol."
+---
+
+The CoinMarketCap MCP Server brings real-time cryptocurrency market data directly into your AI coding environment. By connecting through the Model Context Protocol, you can query live prices, rankings, and on-chain DEX data from within your IDE — without switching tabs or writing a single fetch call.
+
+## What Is MCP?
+
+The Model Context Protocol (MCP) is an open standard that lets AI assistants — such as Claude, Cursor, and Windsurf — call external tools and data sources during a conversation. Instead of relying on static training data, your AI can reach out to a live server and return up-to-the-minute information on demand.
+
+CoinMarketCap's MCP server exposes real-time crypto prices, global market metrics, trending tokens, and DEX on-chain data as callable tools. Ask your AI "What is the current price of Ethereum?" and it will query CMC directly and return a live answer — right inside your editor.
+
+## Supported Clients
+
+<CardGroup cols={2}>
+  <Card title="Cursor" icon="arrow-pointer">
+    Add the MCP server to `.cursor/mcp.json` and query live crypto data from the Cursor AI chat panel.
+  </Card>
+  <Card title="Claude Code" icon="terminal">
+    Configure the MCP server in `claude_desktop_config.json` to give Claude Code direct access to CMC market tools.
+  </Card>
+  <Card title="Windsurf" icon="wind">
+    Windsurf's Cascade AI picks up MCP servers from its settings file, enabling market-aware code generation and analysis.
+  </Card>
+  <Card title="VS Code (with Copilot)" icon="code">
+    Use the MCP extension for VS Code to surface CMC tools alongside GitHub Copilot's chat interface.
+  </Card>
+</CardGroup>
+
+## Connect via API Key
+
+Authenticate with your CoinMarketCap API key to access the MCP server. All requests pass the key in an HTTP header — no OAuth flow required.
+
+<Steps>
+  <Step title="Get your API key">
+    Sign in (or sign up for free) at [pro.coinmarketcap.com](https://pro.coinmarketcap.com). Copy your API key from the dashboard.
+  </Step>
+  <Step title="Add the MCP server config to your IDE">
+    Create or update your IDE's MCP configuration file with the CoinMarketCap server URL and your API key. See the examples below for Cursor and Claude Desktop.
+  </Step>
+  <Step title="Verify the connection">
+    Open your AI chat panel and ask: **"What is the current price of Bitcoin?"** If the MCP server is connected, your assistant will return a live price from CoinMarketCap.
+  </Step>
+</Steps>
+
+<CodeGroup>
+
+```json Cursor (.cursor/mcp.json)
+{
+  "mcpServers": {
+    "coinmarketcap": {
+      "url": "https://mcp.coinmarketcap.com/mcp",
+      "headers": {
+        "X-CMC_PRO_API_KEY": "YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+```json Claude Desktop (claude_desktop_config.json)
+{
+  "mcpServers": {
+    "coinmarketcap": {
+      "url": "https://mcp.coinmarketcap.com/mcp",
+      "headers": {
+        "X-CMC_PRO_API_KEY": "YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+## Connect via x402 (No Key Required)
+
+Don't have a CoinMarketCap account? Use the `/x402/mcp` endpoint to pay per request using the x402 protocol — no sign-up, no monthly plan, no API key needed. Each tool call deducts a micro-payment automatically.
+
+<CodeGroup>
+
+```json Cursor (.cursor/mcp.json)
+{
+  "mcpServers": {
+    "coinmarketcap": {
+      "url": "https://mcp.coinmarketcap.com/x402/mcp"
+    }
+  }
+}
+```
+
+```json Claude Desktop (claude_desktop_config.json)
+{
+  "mcpServers": {
+    "coinmarketcap": {
+      "url": "https://mcp.coinmarketcap.com/x402/mcp"
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+<Note>
+  The x402 endpoint is ideal for low-volume experimentation. For production workloads or high-frequency queries, an API key plan offers better predictability and lower per-call cost.
+</Note>
+
+## Available MCP Tools
+
+Once connected, your AI assistant can invoke the following tools from any conversation or code generation context:
+
+| Tool | Description |
+|------|-------------|
+| `get_crypto_price` | Fetch the latest price for one or more cryptocurrency assets by symbol or CMC ID. |
+| `get_listings` | Retrieve ranked cryptocurrency listings sorted by market capitalization. |
+| `get_global_metrics` | Return total crypto market cap, BTC/ETH dominance, and the Fear & Greed Index. |
+| `search_dex` | Search on-chain tokens across DEXs by name or symbol. |
+| `get_trending` | List the currently trending tokens based on CoinMarketCap traffic and watchlists. |
+
+<Tip>
+  Explore the **CMC Agent Hub** for pre-built Skills that wrap these tools into ready-made market report templates — daily summaries, portfolio snapshots, and sector rotation reports — deployable in one click to your AI assistant.
+</Tip>
