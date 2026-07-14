@@ -1,7 +1,7 @@
 ---
-title: "Cryptocurrency Listings — Ranked Market Data"
+title: "Cryptocurrency Listings API — Live Market Cap Rankings"
 sidebarTitle: "Listings"
-description: "Fetch all active cryptocurrencies ranked by market cap, with real-time price, volume, and percentage change data in any currency you choose."
+description: "Retrieve active cryptocurrencies ranked by market cap with real-time price, volume, and percentage-change data to power screeners and investment dashboards."
 ---
 
 The listings endpoint returns a paginated, ranked snapshot of every active cryptocurrency tracked by CoinMarketCap. By default results are sorted by market capitalization, but you can reorder by volume, price movement, or other metrics and apply a rich set of filters to narrow the response to exactly the assets you care about. This endpoint powers leaderboards, screeners, and portfolio dashboards across the industry.
@@ -97,23 +97,23 @@ GET /v1/cryptocurrency/listings/latest
     </ResponseField>
 
     <ResponseField name="cmc_rank" type="integer">
-      The current market-cap rank (1 = largest). Only present when `cmc_rank` is included in `aux`.
+      The current market-cap rank (1 = largest). Track this field over time to spot assets climbing the global standings — a rising rank often signals growing investor demand and momentum.
     </ResponseField>
 
     <ResponseField name="circulating_supply" type="number">
-      The number of coins or tokens currently in public circulation.
+      The number of coins or tokens currently in public circulation — the supply figure used to calculate market cap and assess token float for liquidity analysis.
     </ResponseField>
 
     <ResponseField name="total_supply" type="number">
-      The total amount of coins or tokens in existence, including those locked or reserved.
+      The total amount of coins or tokens in existence, including those locked or reserved. Comparing this to `circulating_supply` reveals how much potential sell pressure may enter the market as tokens unlock.
     </ResponseField>
 
     <ResponseField name="max_supply" type="number | null">
-      The maximum number of coins that will ever exist. `null` if uncapped.
+      The hard cap on coins that will ever exist. `null` if the supply is uncapped. A finite `max_supply` is a key scarcity argument — it defines the ultimate dilution ceiling for long-term holders.
     </ResponseField>
 
     <ResponseField name="last_updated" type="string">
-      ISO 8601 UTC timestamp of when this asset's market data was last refreshed.
+      ISO 8601 UTC timestamp of when this asset's market data was last refreshed. Use this to verify data recency before making time-sensitive decisions.
     </ResponseField>
 
     <ResponseField name="quote" type="object">
@@ -121,25 +121,25 @@ GET /v1/cryptocurrency/listings/latest
 
       <Expandable title="Quote object (per currency)">
         <ResponseField name="price" type="number">
-          Current price in the target currency.
+          Current spot price in the target currency — the entry or exit point investors use for position sizing and order placement.
         </ResponseField>
         <ResponseField name="volume_24h" type="number">
-          24-hour trading volume in the target currency.
+          Aggregate trading volume over the last 24 hours in the target currency. High volume relative to market cap indicates strong liquidity and conviction behind price moves.
         </ResponseField>
         <ResponseField name="market_cap" type="number">
-          Market capitalisation: `price × circulating_supply`.
+          Market capitalisation (`price × circulating_supply`) — the primary metric investors use to compare the relative size and weight of assets in a portfolio.
         </ResponseField>
         <ResponseField name="percent_change_1h" type="number">
-          Price change over the last 1 hour as a percentage.
+          Price change over the last 1 hour as a percentage. Useful for detecting short-term momentum shifts and intraday trading signals.
         </ResponseField>
         <ResponseField name="percent_change_24h" type="number">
-          Price change over the last 24 hours as a percentage.
+          Price change over the last 24 hours as a percentage. The standard daily performance gauge for comparing assets and screening for breakout or reversal candidates.
         </ResponseField>
         <ResponseField name="percent_change_7d" type="number">
-          Price change over the last 7 days as a percentage.
+          Price change over the last 7 days as a percentage. A key medium-term trend indicator for swing traders and weekly portfolio rebalancing.
         </ResponseField>
         <ResponseField name="last_updated" type="string">
-          ISO 8601 UTC timestamp when this quote was last calculated.
+          ISO 8601 UTC timestamp when this quote was last calculated. Verify recency before executing time-sensitive decisions.
         </ResponseField>
       </Expandable>
     </ResponseField>

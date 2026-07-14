@@ -17,11 +17,11 @@ Jump straight into the resource that matches where you are right now.
   <Card title="Authentication" icon="key" href="/authentication">
     Learn how to obtain your API key and securely authenticate every request.
   </Card>
-  <Card title="API Reference" icon="book-open" href="https://coinmarketcap.com/api/documentation/v1/" target="_blank">
+  <Card title="API Reference" icon="book-open" href="/api-reference/overview">
     Browse the full endpoint catalog — quotes, metadata, DEX data, global metrics, and more.
   </Card>
-  <Card title="Guides" icon="map" href="/guides">
-    Step-by-step tutorials for common use cases, from portfolio tracking to on-chain analytics.
+  <Card title="Plans & Credits" icon="map" href="/plans-and-credits">
+    Compare plans, understand credit costs, and choose the right tier for your use case.
   </Card>
 </CardGroup>
 
@@ -48,23 +48,23 @@ Jump straight into the resource that matches where you are right now.
 
 CoinMarketCap's API is purpose-built for every layer of the data stack — from rapid prototyping to institutional-grade production systems.
 
-<CardGroup cols={3}>
-  <Card title="Real-Time Market Data" icon="chart-line">
+<CardGroup cols={2}>
+  <Card title="Real-Time Market Data" icon="chart-line" href="/api-reference/cryptocurrency/quotes">
     Live quotes, order-book depth, and 24 h rolling statistics for every listed asset, updated every 60 seconds on the Basic plan and down to real-time on higher tiers.
   </Card>
-  <Card title="Historical Data" icon="clock-rotate-left">
+  <Card title="Historical Data" icon="clock-rotate-left" href="/api-reference/cryptocurrency/historical">
     Tick-level and daily OHLCV history spanning all-time for Professional and Enterprise plans — ideal for backtesting strategies and training ML models.
   </Card>
-  <Card title="DEX & On-Chain Analytics" icon="link">
+  <Card title="DEX & On-Chain Analytics" icon="link" href="/api-reference/dex/pairs">
     Pool-level liquidity, swap volumes, and token flows across major decentralised exchanges, enriched with on-chain transaction data.
   </Card>
-  <Card title="WebSocket Streaming" icon="bolt">
+  <Card title="WebSocket Streaming" icon="bolt" href="/guides/websocket-streaming">
     Push-based price streams with sub-second latency for Startup plans and above — no polling required, perfect for live trading interfaces.
   </Card>
-  <Card title="x402 Pay-Per-Request" icon="coins">
+  <Card title="x402 Pay-Per-Request" icon="coins" href="/guides/x402-keyless">
     Call any endpoint without an API key using the x402 protocol. Pay $0.01 USDC per request on-chain — ideal for serverless and AI-agent workflows.
   </Card>
-  <Card title="MCP Server" icon="robot">
+  <Card title="MCP Server" icon="robot" href="/tools/mcp-server">
     Integrate CoinMarketCap data directly into AI assistants and agent pipelines via the Model Context Protocol server — no custom glue code needed.
   </Card>
 </CardGroup>
@@ -77,4 +77,4 @@ All API requests target a single base URL:
 https://pro-api.coinmarketcap.com
 ```
 
-Every endpoint is versioned (e.g. `/v1/`, `/v2/`) to ensure backwards compatibility as the platform evolves. The full endpoint reference lives at [coinmarketcap.com/api/documentation/v1/](https://coinmarketcap.com/api/documentation/v1/).
+Every endpoint is versioned (e.g. `/v1/`, `/v2/`) to ensure backwards compatibility as the platform evolves. Explore the full endpoint catalog in the [API Reference](/api-reference/overview).

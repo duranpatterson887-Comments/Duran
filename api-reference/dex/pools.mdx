@@ -1,7 +1,7 @@
 ---
-title: "DEX Pools — Liquidity Pool OHLCV Data"
+title: "DEX Pools — Historical OHLCV Data for Liquidity Pools"
 sidebarTitle: "Pools"
-description: "Query historical OHLCV candlestick data for any on-chain liquidity pool to analyze price action, volume trends, and LP performance over time."
+description: "Query historical OHLCV candlestick data for any on-chain liquidity pool to analyze price action, volume patterns, and LP returns over time."
 ---
 
 Liquidity pools are the beating heart of every DEX, and their historical price and volume data is indispensable for technical analysis, backtesting strategies, and evaluating liquidity provider returns. This endpoint delivers OHLCV (Open, High, Low, Close, Volume) candlestick data at your chosen interval — from 5-minute intraday bars all the way to daily candles — for any tracked pool contract, on any supported network.
@@ -25,7 +25,7 @@ Liquidity pools are the beating heart of every DEX, and their historical price a
 </ParamField>
 
 <ParamField query="network_slug" type="string" required>
-  The blockchain network where the pool is deployed. Examples: `ethereum`, `base`, `solana`, `bsc`, `arbitrum`, `polygon`.
+  The blockchain network where the pool is deployed. Examples: `ethereum`, `base`, `solana`, `bsc`, `arbitrum`, `polygon`, `avalanche`, `optimism`.
 </ParamField>
 
 <ParamField query="time_start" type="string">

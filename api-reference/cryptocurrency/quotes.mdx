@@ -1,10 +1,10 @@
 ---
-title: "Cryptocurrency Quotes — Live Price Data"
+title: "Cryptocurrency Quotes API — Real-Time Prices and Market Data"
 sidebarTitle: "Quotes"
-description: "Fetch real-time price, volume, market cap, and percentage change data for one or many cryptocurrencies in any conversion currency you choose."
+description: "Live price, volume, market cap, and percentage-change data for up to 100 assets per call — for trading dashboards, price alerts, and portfolio valuations."
 ---
 
-The quotes endpoint gives you a live, on-demand snapshot of price and market data for one or more cryptocurrencies in a single API call. You can look up assets by their CoinMarketCap ID, ticker symbol, or slug, and receive quotes in any combination of fiat currencies and cryptocurrencies simultaneously. This is the go-to endpoint for portfolio valuation, price widgets, trading dashboards, and alert systems.
+The quotes endpoint gives you a live, on-demand snapshot of price and market data for up to 100 cryptocurrencies in a single API call. You can look up assets by their CoinMarketCap ID, ticker symbol, or slug, and receive quotes in any combination of fiat currencies and cryptocurrencies simultaneously. Whether you are tracking a diversified portfolio, powering a trading dashboard, or firing price alerts, this endpoint delivers the real-time intelligence investors need to act with confidence.
 
 ## Endpoint
 
@@ -15,7 +15,7 @@ GET /v2/cryptocurrency/quotes/latest
 ## Parameters
 
 <ParamField query="id" type="string">
-  One or more CoinMarketCap cryptocurrency IDs, comma-separated. Example: `"1,1027"` for Bitcoin and Ethereum. Using IDs is the most reliable lookup method because IDs never change, even if a symbol is reused.
+  One or more CoinMarketCap cryptocurrency IDs, comma-separated. Supports up to 100 IDs per call. Example: `"1,1027"` for Bitcoin and Ethereum. Using IDs is the most reliable lookup method because IDs never change, even if a symbol is reused.
 </ParamField>
 
 <ParamField query="symbol" type="string">
@@ -69,25 +69,25 @@ GET /v2/cryptocurrency/quotes/latest
 
       <Expandable title="Quote object fields">
         <ResponseField name="price" type="number">
-          Current spot price in the target currency.
+          Current spot price in the target currency — use this as your real-time mark-to-market value for portfolio calculations and order placement.
         </ResponseField>
         <ResponseField name="volume_24h" type="number">
-          Aggregate trading volume over the last 24 hours in the target currency.
+          Aggregate trading volume over the last 24 hours in the target currency. Elevated volume alongside a price move signals conviction; low volume suggests a fragile breakout.
         </ResponseField>
         <ResponseField name="market_cap" type="number">
-          Market capitalisation (`price × circulating_supply`) in the target currency.
+          Market capitalisation (`price × circulating_supply`) in the target currency — the standard measure for comparing asset weight and constructing market-cap-weighted portfolios.
         </ResponseField>
         <ResponseField name="percent_change_1h" type="number">
-          Price percentage change over the last 1 hour.
+          Price percentage change over the last 1 hour. Ideal for intraday momentum strategies and short-term alert triggers.
         </ResponseField>
         <ResponseField name="percent_change_24h" type="number">
-          Price percentage change over the last 24 hours.
+          Price percentage change over the last 24 hours — the most widely cited daily performance metric for comparing assets and screening for leaders and laggards.
         </ResponseField>
         <ResponseField name="percent_change_7d" type="number">
-          Price percentage change over the last 7 days.
+          Price percentage change over the last 7 days. A key medium-term trend signal for swing traders and weekly portfolio rebalancing workflows.
         </ResponseField>
         <ResponseField name="last_updated" type="string">
-          ISO 8601 UTC timestamp when this specific quote was last calculated.
+          ISO 8601 UTC timestamp when this specific quote was last calculated. Always check this field to confirm data freshness before executing time-sensitive trades.
         </ResponseField>
       </Expandable>
     </ResponseField>

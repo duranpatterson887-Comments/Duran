@@ -1,14 +1,14 @@
 ---
-title: "API Response Format and Status Envelope"
+title: "CoinMarketCap API Response Format and Status Codes"
 sidebarTitle: "Response Format"
-description: "Every CoinMarketCap API response wraps its payload in a standard JSON envelope with a status object containing error codes, credit usage, and timing metadata."
+description: "CoinMarketCap API responses share a standard JSON envelope with a status object — giving you instant visibility into errors, credit usage, and timing."
 ---
 
-Every response from the CoinMarketCap API — whether a success or an error — is wrapped in a consistent JSON envelope. This standardized structure means you can write a single response-handling layer in your application that works correctly across every endpoint: check the `status` object first, then read your `data` payload with confidence.
+Every response from the CoinMarketCap API — whether a success or an error — is wrapped in a consistent JSON envelope. This standardized structure means you can write a single response-handling layer in your application that works correctly across every endpoint: check the `status` object first, then read your `data` payload with confidence and act on market-moving information without delay.
 
 ## The Status Object
 
-The top-level `status` object is always present, regardless of whether the request succeeded or failed. It gives you everything you need to confirm success, diagnose errors, and track credit consumption in one place.
+The top-level `status` object is always present, regardless of whether the request succeeded or failed. It gives you everything you need to confirm success, diagnose errors, and track credit consumption in one place — so your team spends less time debugging and more time acting on valuable market data.
 
 <ResponseField name="timestamp" type="string" required>
   ISO 8601 UTC timestamp of when the request was received and processed by the API server. Example: `"2024-11-01T12:00:00.000Z"`.
@@ -36,7 +36,7 @@ The top-level `status` object is always present, regardless of whether the reque
 
 ## Successful Response
 
-A successful response has `status.error_code === 0`, `status.error_message === null`, and a populated `data` field. The shape of `data` varies by endpoint — it may be a single object (for single-asset queries) or a list/map (for listing endpoints).
+A successful response has `status.error_code === 0`, `status.error_message === null`, and a populated `data` field containing the market intelligence you requested. The shape of `data` varies by endpoint — it may be a single object (for single-asset queries) or a list/map (for listing endpoints).
 
 ```json
 {
@@ -83,7 +83,7 @@ A successful response has `status.error_code === 0`, `status.error_message === n
 
 ## Error Response
 
-When a request fails, the HTTP status code will be non-`200` **and** `status.error_code` will be non-zero. The `data` field will be absent or `null`. Always check `error_code` programmatically rather than relying solely on the HTTP status code — some client errors return a `200` HTTP status with a non-zero `error_code` inside the envelope.
+When a request fails, the HTTP status code will be non-`200` **and** `status.error_code` will be non-zero. The `data` field will be absent or `null`. Handling errors correctly keeps your application resilient — always check `error_code` programmatically rather than relying solely on the HTTP status code, since some client errors return a `200` HTTP status with a non-zero `error_code` inside the envelope.
 
 ```json
 {
@@ -127,7 +127,7 @@ List-based endpoints (such as `/v1/cryptocurrency/listings/latest`) include addi
   Present on asset detail responses. The total number of active trading pairs for the asset across all tracked exchanges.
 </ResponseField>
 
-Use `total_count` together with the `start` and `limit` pagination parameters to iterate through a complete dataset:
+Use `total_count` together with the `start` and `limit` pagination parameters to systematically iterate through a complete dataset — giving you comprehensive market coverage across all tracked assets:
 
 ```json
 {

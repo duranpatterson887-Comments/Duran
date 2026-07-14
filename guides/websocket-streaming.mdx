@@ -1,7 +1,7 @@
 ---
-title: "Stream Real-Time Crypto Data via WebSocket"
+title: "Stream Real-Time Crypto Price Data via WebSocket API"
 sidebarTitle: "WebSocket Streaming"
-description: "Connect to CoinMarketCap's WebSocket API to receive sub-second price updates, DEX events, and on-chain signals without polling."
+description: "Connect to CoinMarketCap's WebSocket API to receive sub-second price updates, DEX trade events, and on-chain signals without REST polling."
 ---
 
 The CoinMarketCap WebSocket API replaces the polling loop with a persistent, push-based connection that delivers price updates, candlestick bars, on-chain transactions, and DEX liquidity events the moment they are available. Instead of burning API credits on repeated REST calls, you subscribe once to the channels you need and receive a continuous stream of updates — ideal for live trading dashboards, alert engines, and automated trading bots that need to react to market moves in milliseconds.

@@ -1,5 +1,5 @@
 ---
-title: "Make Keyless API Calls with x402 Payments"
+title: "Keyless API Access via x402 Pay-Per-Request Payments"
 sidebarTitle: "Keyless API"
 description: "Call the CoinMarketCap API without signing up or managing API keys — pay $0.01 USDC per request on Base using the x402 protocol."
 ---
@@ -38,9 +38,9 @@ All x402 endpoints are available at the same base URL as the standard API, under
 | Endpoint | Cost | Description |
 |----------|------|-------------|
 | `GET /x402/v3/cryptocurrency/quotes/latest` | $0.01 USDC | Live prices for one or more cryptocurrencies |
-| `GET /x402/v3/cryptocurrency/listing/latest` | $0.01 USDC | Paginated listing of all tracked cryptocurrencies |
+| `GET /x402/v2/cryptocurrency/listings/latest` | $0.01 USDC | Paginated listing of all tracked cryptocurrencies |
 | `GET /x402/v4/dex/pairs/quotes/latest` | $0.01 USDC | Real-time DEX trading pair prices |
-| `GET /x402/v1/dex/search` | $0.01 USDC | Search for on-chain tokens by name, symbol, or address |
+| `GET /x402/v4/dex/search` | $0.01 USDC | Search for on-chain tokens by name, symbol, or address |
 | `GET /x402/mcp` | $0.01 USDC | Model Context Protocol endpoint for AI agent integrations |
 
 ---

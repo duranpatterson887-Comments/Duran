@@ -1,7 +1,7 @@
 ---
-title: "CoinMarketCap API Frequently Asked Questions"
+title: "CoinMarketCap API — Frequently Asked Questions (FAQ)"
 sidebarTitle: "FAQ"
-description: "Answers to the most common questions about CoinMarketCap API credits, plans, data usage, rate limits, and historical data access."
+description: "Answers to the most common questions about CoinMarketCap API credits, plans, rate limits, historical data access, and building with crypto market data."
 ---
 
 Whether you're just getting started or scaling to millions of API calls, these answers cover the questions that come up most often from CoinMarketCap API users. If your question isn't here, visit the [developer portal](https://pro.coinmarketcap.com) or reach out to support.
@@ -13,7 +13,7 @@ Whether you're just getting started or scaling to millions of API calls, these a
 </Accordion>
 
 <Accordion title="Can I use the API for free?">
-  Yes. The **Basic plan** is free forever and requires no credit card. It includes **15,000 credits per month**, giving you access to core endpoints such as latest listings, quotes, and global metrics.
+  Yes. The **Basic plan** is free forever and requires no credit card. It includes **10,000 credits per month**, giving you access to core endpoints such as latest listings, quotes, and global metrics.
 
   Free plan limits are designed for personal projects, prototyping, and low-traffic applications. When your usage or feature needs grow, you can upgrade to a paid plan at any time from the [developer dashboard](https://pro.coinmarketcap.com).
 </Accordion>
@@ -41,37 +41,38 @@ Whether you're just getting started or scaling to millions of API calls, these a
 </Accordion>
 
 <Accordion title="What is the difference between the Startup and Growth plans?">
-  Both plans unlock advanced endpoints beyond the free Basic tier, but they differ in scale:
+  Both plans unlock advanced endpoints beyond the free Basic tier, but they differ in scale and the depth of market intelligence they provide:
 
-  | Feature | Startup | Growth |
-  |---------|---------|--------|
+  | Feature | Startup ($79/mo) | Growth ($299/mo) |
+  |---------|-----------------|-----------------|
   | Monthly credits | 450,000 | 2,000,000 |
   | Endpoints | Core + expanded set | All 80+ endpoints |
   | Historical data | Up to 1 year | Up to 3 years (daily) |
-  | WebSocket | Not included | Included |
+  | WebSocket streaming | Not included | Included |
 
-  The **Growth plan** is the right choice when you need the full endpoint catalog — including DEX data, advanced historical OHLCV, and WebSocket price streams — or when your application handles significant traffic.
+  The **Growth plan** is the right choice when you need the full endpoint catalog — including DEX data, advanced historical OHLCV, and real-time WebSocket price streams — or when your application handles significant traffic and demands the fastest possible market signals.
 </Accordion>
 
 <Accordion title="How do I get historical data older than 1 year?">
   Historical depth depends on your plan:
 
-  - **Basic / Hobbyist** — Limited or no historical access.
-  - **Startup** — Up to 1 year of daily OHLCV data.
-  - **Builder** — Up to 3 years of daily historical data.
-  - **Startup+ / Growth and above** — Full all-time historical data going back to each asset's first recorded price on CoinMarketCap.
+  - **Basic** (free) — No historical OHLCV access; latest data only.
+  - **Builder** ($29/mo) — Up to 1 month of daily historical data.
+  - **Startup** ($79/mo) — Up to 1 year of daily OHLCV data.
+  - **Growth** ($299/mo) — Up to 3 years of daily historical data.
+  - **Professional** ($699/mo) and **Enterprise** — Full all-time historical data going back to each asset's first recorded price on CoinMarketCap.
 
-  Upgrade your plan from the [developer dashboard](https://pro.coinmarketcap.com) to unlock deeper historical access.
+  Upgrade your plan from the [developer dashboard](https://pro.coinmarketcap.com) to unlock deeper historical access and power more sophisticated backtesting and research workflows.
 </Accordion>
 
-<Accordion title="Is WebSocket available on the free plan?">
-  No. WebSocket streaming requires the **Startup plan ($79/month)** or higher. WebSocket connections deliver real-time price updates pushed to your client the moment they change — ideal for live dashboards, trading terminals, and alerting systems.
+<Accordion title="Is WebSocket streaming available on the free plan?">
+  No. WebSocket streaming requires the **Growth plan ($299/month)** or higher. WebSocket connections deliver real-time price updates pushed to your client the moment they change — ideal for live trading dashboards, algorithmic strategies, and high-frequency alerting systems.
 
-  On the free Basic plan, you can poll the REST API for the latest quotes, but you will not have access to persistent WebSocket streams.
+  On the free Basic plan and lower-tier paid plans, you can poll the REST API for the latest quotes, but persistent WebSocket streams are reserved for Growth, Professional, and Enterprise subscribers.
 </Accordion>
 
 <Accordion title="What currencies can I convert to?">
-  CoinMarketCap supports a wide range of conversion targets via the `convert` parameter:
+  CoinMarketCap supports a wide range of conversion targets via the `convert` parameter, giving you flexibility to display prices in the currency that matters most to your users and your investment strategy:
 
   - **93 fiat currencies** — including USD, EUR, GBP, JPY, AUD, CAD, and more.
   - **4 precious metals** — XAU (Gold), XAG (Silver), XPT (Platinum), and XPD (Palladium).
@@ -81,7 +82,7 @@ Whether you're just getting started or scaling to millions of API calls, these a
 </Accordion>
 
 <Accordion title="How do I get Enterprise support?">
-  Enterprise plans offer custom credit volumes, dedicated SLAs, white-glove onboarding, and direct access to the CoinMarketCap data team. They are tailored for high-traffic applications, financial institutions, and data redistribution use cases.
+  Enterprise plans offer custom credit volumes, dedicated SLAs, white-glove onboarding, and direct access to the CoinMarketCap data team. They are tailored for high-traffic applications, financial institutions, and data redistribution use cases where reliability and scale are non-negotiable.
 
-  To discuss Enterprise pricing and requirements, contact the sales team directly at [pro.coinmarketcap.com](https://pro.coinmarketcap.com). A team member will respond to outline options and draft a custom agreement for your needs.
+  To discuss Enterprise pricing and requirements, contact the sales team directly at [pro.coinmarketcap.com](https://pro.coinmarketcap.com). A team member will respond to outline options and draft a custom agreement aligned with your business needs.
 </Accordion>

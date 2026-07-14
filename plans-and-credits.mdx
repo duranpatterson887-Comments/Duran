@@ -40,7 +40,7 @@ Every response from the CoinMarketCap API includes a `credit_count` field in the
     "credit_count": 1,
     "elapsed": 14
   },
-  "data": { ... }
+  "data": { "..." : "..." }
 }
 ```
 
@@ -88,7 +88,7 @@ Keep an eye on your credit consumption directly in the CoinMarketCap developer d
 </Steps>
 
 <Tip>
-  **Batch your requests** to stretch your credit allowance. The `/v2/cryptocurrency/quotes/latest` endpoint accepts a comma-separated list of symbols (`symbol=BTC,ETH,SOL,BNB`) and returns all of them for **1 credit** — far more efficient than individual calls per symbol.
+  **Batch your requests** to stretch your credit allowance further. The `/v2/cryptocurrency/quotes/latest` endpoint accepts a comma-separated list of symbols (`symbol=BTC,ETH,SOL,BNB`) and returns all of them for **1 credit** — far more efficient than individual calls per symbol.
 </Tip>
 
 ## Annual Savings
@@ -107,16 +107,16 @@ Select annual billing during checkout or switch at any time from the **Billing**
 ## Choosing the Right Plan
 
 <CardGroup cols={2}>
-  <Card title="Prototyping & Learning" icon="flask">
+  <Card title="Prototyping & Learning" icon="flask" href="/quickstart">
     Start on the free **Basic plan**. 15,000 credits and 50 req/min cover dashboards, bots, and personal projects without any cost.
   </Card>
-  <Card title="Growing Applications" icon="chart-line">
+  <Card title="Growing Applications" icon="chart-line" href="/guides/price-quotes">
     The **Builder** ($29/mo) or **Startup** ($79/mo) plans add deeper history and higher rate limits once your user base grows.
   </Card>
-  <Card title="Production Platforms" icon="server">
+  <Card title="Production Platforms" icon="server" href="/guides/websocket-streaming">
     **Growth** ($299/mo) and **Professional** ($699/mo) unlock WebSocket streaming, all-time historical data, and the throughput needed for real-time trading tools.
   </Card>
-  <Card title="Institutional & Enterprise" icon="building">
+  <Card title="Institutional & Enterprise" icon="building" href="/faq">
     Contact sales for a custom **Enterprise** plan with 30M+ credits, dedicated support, SLA guarantees, and custom rate limits.
   </Card>
 </CardGroup>

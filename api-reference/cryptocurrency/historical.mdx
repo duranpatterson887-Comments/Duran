@@ -1,10 +1,10 @@
 ---
-title: "Historical Quotes — Time Series Price Data"
+title: "Historical Cryptocurrency Quotes API — Time-Series Data"
 sidebarTitle: "Historical"
-description: "Access CoinMarketCap's full price history for any cryptocurrency — from daily OHLCV candles to 5-minute intraday ticks — for backtesting and analysis."
+description: "Retrieve full price history for any cryptocurrency — 5-minute intraday ticks to yearly aggregates — for backtesting trading strategies and charting performance."
 ---
 
-The historical quotes endpoint gives you access to CoinMarketCap's complete time-series price archive for any tracked cryptocurrency. Whether you are backtesting a trading strategy, building charting tools, running academic research, or computing custom performance metrics, this endpoint delivers price, volume, and market cap snapshots at whatever granularity your plan supports — from 5-minute ticks all the way to yearly aggregates.
+The historical quotes endpoint gives you access to CoinMarketCap's complete time-series price archive for any tracked cryptocurrency. Whether you are backtesting a trading strategy, building charting tools, running academic research, or computing custom performance metrics, this endpoint delivers the price, volume, and market cap history investors need to quantify risk, validate signals, and understand how assets have performed across market cycles — from 5-minute intraday ticks all the way to yearly aggregates.
 
 ## Endpoint
 
@@ -76,15 +76,9 @@ You must supply at least one of `id`, `symbol`, or `slug`.
 
 ## Plan Requirements
 
-The intervals and history depth available to you depend on your subscription tier:
+The intervals and history depth available to you depend on your subscription tier. Higher-tier plans unlock finer granularities and longer historical archives — giving quantitative analysts and active traders access to the full dataset they need for rigorous backtesting.
 
-| Plan | History Depth | Minimum Interval |
-|------|--------------|------------------|
-| **Basic (Free)** | Up to 1 year of quotes history | `daily` only |
-| **Builder** | Up to 3 years daily; up to 1 month intraday | `1h` |
-| **Startup+** | All-time history; up to 12 months intraday | `5m` |
-
-Upgrade your plan at [pro.coinmarketcap.com](https://pro.coinmarketcap.com/signup) to unlock longer histories and finer granularities.
+Intraday intervals (`5m` through `12h`) are available on paid plans. Visit [pro.coinmarketcap.com](https://pro.coinmarketcap.com/signup) to compare plans and unlock the granularity your strategy requires.
 
 ## Response Fields
 
@@ -113,16 +107,16 @@ Upgrade your plan at [pro.coinmarketcap.com](https://pro.coinmarketcap.com/signu
 
           <Expandable title="Quote snapshot fields">
             <ResponseField name="price" type="number">
-              Asset price in the target currency at this timestamp.
+              Asset price in the target currency at this timestamp — the core input for backtesting, return calculations, and performance attribution across any time period.
             </ResponseField>
             <ResponseField name="volume_24h" type="number">
-              24-hour rolling trading volume at this timestamp.
+              24-hour rolling trading volume at this timestamp. Historical volume data helps identify accumulation phases, distribution events, and liquidity conditions at key price levels.
             </ResponseField>
             <ResponseField name="market_cap" type="number">
-              Market capitalisation at this timestamp.
+              Market capitalisation at this timestamp. Track market cap history to analyse how an asset's relative size has evolved and to reconstruct index-weight changes over time.
             </ResponseField>
             <ResponseField name="timestamp" type="string">
-              ISO 8601 UTC timestamp when this specific quote was recorded.
+              ISO 8601 UTC timestamp when this specific quote was recorded. Use as the x-axis coordinate when plotting price charts or aligning data with external events.
             </ResponseField>
           </Expandable>
         </ResponseField>
@@ -239,5 +233,5 @@ for point in quotes:
 ```
 
 <Note>
-  Intraday intervals (`5m`, `10m`, `15m`, `30m`, `1h`, `2h`, `6h`, `12h`) are only available on **Startup plan and above**. Requests for intraday data on a Basic or Builder plan will return an error with `error_code 1006` (subscription plan insufficient). Upgrade at [pro.coinmarketcap.com](https://pro.coinmarketcap.com/signup) to unlock granular tick data.
+  Intraday intervals (`5m`, `10m`, `15m`, `30m`, `1h`, `2h`, `6h`, `12h`) require a paid subscription. Requests for intraday data on plans that do not include this feature will return `error_code 1006` (subscription plan insufficient). Upgrade at [pro.coinmarketcap.com](https://pro.coinmarketcap.com/signup) to unlock granular tick data for high-frequency analysis and intraday backtesting.
 </Note>

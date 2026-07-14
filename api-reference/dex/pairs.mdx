@@ -1,7 +1,7 @@
 ---
-title: "DEX Pairs — Live Trading Pair Quotes"
+title: "DEX Pairs — Real-Time Price and Liquidity for DEX Pairs"
 sidebarTitle: "Pairs"
-description: "Fetch real-time price, volume, and liquidity data for specific DEX trading pairs by contract address across any supported blockchain network."
+description: "Fetch live price, volume, liquidity depth, and swap counts for specific DEX trading pairs by contract address and blockchain network."
 ---
 
 Every on-chain swap happens inside a trading pair contract, and this endpoint gives you live, tick-fresh quotes straight from those pools. By supplying one or more pair contract addresses alongside the target network, you can retrieve real-time price in USD and native token terms, 24-hour volume, total liquidity depth, and transaction counts — all the signals you need to assess market health and execution quality before placing a trade.
@@ -25,7 +25,7 @@ Every on-chain swap happens inside a trading pair contract, and this endpoint gi
 </ParamField>
 
 <ParamField query="network_slug" type="string" required>
-  The blockchain network on which the pair exists. Examples: `ethereum`, `base`, `solana`, `bsc`, `arbitrum`, `polygon`.
+  The blockchain network on which the pair exists. Examples: `ethereum`, `base`, `solana`, `bsc`, `arbitrum`, `polygon`, `avalanche`, `optimism`.
 </ParamField>
 
 <ParamField query="convert" type="string">

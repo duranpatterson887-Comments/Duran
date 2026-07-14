@@ -1,25 +1,25 @@
 ---
-title: "Embeddable Crypto Widgets for Your Website"
+title: "Embeddable Crypto Widgets — Live Market Data for Any Site"
 sidebarTitle: "Widgets"
-description: "Add live cryptocurrency prices, tickers, and market cap data to any website with CoinMarketCap's free embeddable widgets."
+description: "Display real-time cryptocurrency prices, market caps, and exchange volumes on any website with free embeddable widgets — no API key or account required."
 ---
 
-CoinMarketCap's embeddable widgets let you display live cryptocurrency data on any website in minutes — no API key, no back-end code, and no account required. Copy a snippet, paste it into your HTML, and your visitors instantly see real-time prices, market caps, and exchange volumes powered by the world's most-referenced crypto data platform.
+CoinMarketCap's embeddable widgets transform any webpage into a live investment intelligence dashboard — no API key, no back-end code, and no account required. Copy a snippet, paste it into your HTML, and your visitors instantly see real-time prices, market caps, and exchange volumes powered by the world's most-referenced crypto data platform.
 
 ## Available Widgets
 
 <CardGroup cols={2}>
-  <Card title="Ticker Tape" icon="tape">
-    A horizontally scrolling price ticker perfect for site headers and footers. Displays live prices and 24h change for a configurable list of assets.
+  <Card title="Ticker Tape" icon="tape" href="/tools/widgets">
+    A horizontally scrolling price ticker perfect for site headers and footers. Displays live prices and 24h change for a configurable list of assets, keeping your audience informed at a glance.
   </Card>
-  <Card title="Price Widget" icon="tag">
-    A compact price card for a single asset showing the current price, 24h percentage change, and a sparkline chart.
+  <Card title="Price Widget" icon="tag" href="/tools/widgets">
+    A compact price card for a single asset showing the current price, 24h percentage change, and a sparkline chart — ideal for highlighting a featured investment.
   </Card>
-  <Card title="Market Cap Widget" icon="chart-bar">
-    Ranks the top N cryptocurrencies by market cap in a clean table format, updated in real time.
+  <Card title="Market Cap Widget" icon="chart-bar" href="/tools/widgets">
+    Ranks the top N cryptocurrencies by market cap in a clean table format, updated in real time — giving your audience the same macro view that professional traders rely on.
   </Card>
-  <Card title="Exchange Volume Widget" icon="arrow-right-arrow-left">
-    Lists the top exchanges sorted by 24h trading volume, giving your audience an at-a-glance view of market activity.
+  <Card title="Exchange Volume Widget" icon="arrow-right-arrow-left" href="/tools/widgets">
+    Lists the top exchanges sorted by 24h trading volume, giving your audience an at-a-glance view of where market activity and liquidity are concentrated.
   </Card>
 </CardGroup>
 
@@ -59,7 +59,7 @@ Here is an example of what the generated embed code looks like:
 ```
 
 <Note>
-  No API key is required to use any CoinMarketCap widget. All widgets are free and publicly available through the widget builder.
+  No API key is required to use any CoinMarketCap widget. All widgets are free and publicly available through the widget builder at [coinmarketcap.com/widget/](https://coinmarketcap.com/widget/).
 </Note>
 
 ## Customization Options
@@ -98,7 +98,7 @@ React's JSX model doesn't allow third-party `<script>` tags to execute directly.
 
     Create `public/widgets/ticker.html` with the standard CMC embed snippet inside a minimal HTML document.
   </Tab>
-  <Tab title="dangerouslySetInnerHTML">
+  <Tab title="useEffect Script Injection">
     Inject the widget markup directly into a container `div` and load the script via a `useEffect` hook:
 
     ```jsx
@@ -159,5 +159,5 @@ React's JSX model doesn't allow third-party `<script>` tags to execute directly.
 </Tabs>
 
 <Tip>
-  Combine widgets with the CoinMarketCap REST API to build a fully custom dashboard — use widgets for the public-facing display and the API for server-side analytics, alerting, and deeper historical data, all from the same data source your users already trust.
+  Combine widgets with the CoinMarketCap REST API to build a fully custom investment dashboard — use widgets for the public-facing display and the API for server-side analytics, alerting, and deeper historical data, all from the same trusted data source your users already rely on for their trading decisions.
 </Tip>

@@ -4,7 +4,7 @@ sidebarTitle: "Authentication"
 description: "Learn how to obtain your CoinMarketCap API key, pass it securely in requests, and use Keyless access for zero-setup evaluation."
 ---
 
-CoinMarketCap authenticates API requests using a unique API key tied to your account and plan. Every authenticated call must include this key so the platform can identify your account, track credit usage, and enforce rate limits. The recommended method is to pass the key as an HTTP request header — keeping it out of URLs, browser history, and server logs. For quick evaluation without an account, the Keyless trial endpoint lets you hit a subset of endpoints with no credentials at all.
+CoinMarketCap authenticates API requests using a unique API key tied to your account and plan. Every authenticated call must include this key so the platform can identify your account, track credit usage, and enforce rate limits. The recommended method is to pass the key as an HTTP request header — keeping it out of URLs, browser history, and server logs. For quick evaluation without an account, Keyless access lets you hit endpoints instantly with no credentials required.
 
 ## Getting Your API Key
 
@@ -78,35 +78,34 @@ curl "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest?symbol=B
 
 ## Keyless Access
 
-If you want to explore the API before creating an account, use the **Keyless trial endpoint**. No API key, no sign-up — just make a request and get data back.
+If you want to explore the API before creating an account, CoinMarketCap offers two paths to zero-credential access.
 
-**Trial base URL:**
-```
-https://pro-api.coinmarketcap.com/trial-pro-api
-```
+### Basic Keyless Tier
+
+The **Keyless** plan lets you make API calls to the standard base URL without signing up or providing an API key. Requests are rate-limited and cover a limited subset of endpoints — ideal for proof-of-concept work and quick evaluations.
 
 ```bash
-# No API key header needed
-curl "https://pro-api.coinmarketcap.com/trial-pro-api/v2/cryptocurrency/quotes/latest?symbol=BTC"
+# Keyless — omit the X-CMC_PRO_API_KEY header entirely
+curl "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=10"
 ```
 
-Keyless access has the following constraints:
+Keyless access constraints:
 
 | Constraint | Limit |
 |---|---|
 | Rate limit | 10 requests per minute |
 | Endpoints available | Limited subset (quotes, listings, global metrics) |
-| Historical data | None |
+| Historical data | Limited |
 | WebSocket streaming | Not available |
 | Credit tracking | Not available |
+
+### x402 Pay-Per-Request
+
+For serverless and AI-agent workflows that need broader access without managing API keys, CoinMarketCap supports the **x402 protocol**. Pay $0.01 USDC on-chain per request — no account or key required. See the [x402 Keyless guide](/guides/x402-keyless) for integration details.
 
 <Tip>
   Keyless access is ideal for proof-of-concept work and AI-agent pipelines. For production integrations, the free **Basic plan** at [pro.coinmarketcap.com/signup](https://pro.coinmarketcap.com/signup) gives you 15,000 tracked credits per month with a full dashboard.
 </Tip>
-
-### x402 Pay-Per-Request
-
-For serverless and AI-agent workflows that need authenticated access without managing API keys, CoinMarketCap supports the **x402 protocol**. Pay $0.01 USDC on-chain per request — no account or key required. See the [x402 Keyless API guide](/guides/x402-keyless) for integration details.
 
 ## Security Best Practices
 

@@ -7,7 +7,7 @@ description: "Go from zero to a live Bitcoin price in minutes. Follow these four
 This guide gets you from a blank terminal to a live Bitcoin price in under five minutes. You'll create a free account, make your first authenticated request to the `/v2/cryptocurrency/quotes/latest` endpoint, and learn how to extract the data you need from the JSON response. By the end, you'll have a working foundation you can extend to any asset, any metric, and any use case.
 
 <Tip>
-  Want to explore the API before signing up? Use the **Keyless trial endpoint** at `https://pro-api.coinmarketcap.com/trial-pro-api` — no API key or account required. It covers a limited subset of endpoints and is perfect for zero-setup evaluation. See [Authentication](/authentication#keyless-access) for details.
+  Want to explore the API before signing up? Use **Keyless access** via the x402 protocol — no API key or account required. It lets you call endpoints on-chain for $0.01 USDC per request and is perfect for zero-setup evaluation. See [Authentication](/authentication#keyless-access) for details.
 </Tip>
 
 <Steps>
@@ -130,20 +130,20 @@ This guide gets you from a blank terminal to a live Bitcoin price in under five 
     You've got live data flowing — now expand your integration with the rest of the platform.
 
     <CardGroup cols={2}>
-      <Card title="Listings & Rankings" icon="list-ol" href="https://coinmarketcap.com/api/documentation/v1/#operation/getV1CryptocurrencyListingsLatest">
+      <Card title="Listings & Rankings" icon="list-ol" href="/api-reference/cryptocurrency/listings">
         Fetch the full ranked list of cryptocurrencies by market cap with `/v1/cryptocurrency/listings/latest`.
       </Card>
-      <Card title="Historical OHLCV" icon="chart-candlestick" href="https://coinmarketcap.com/api/documentation/v1/#operation/getV2CryptocurrencyOhlcvLatest">
-        Pull daily or hourly open/high/low/close/volume data for any asset.
+      <Card title="Historical OHLCV" icon="chart-candlestick" href="/api-reference/cryptocurrency/historical">
+        Pull daily or hourly open/high/low/close/volume data for any asset to power backtesting and trend analysis.
       </Card>
-      <Card title="Global Metrics" icon="globe" href="https://coinmarketcap.com/api/documentation/v1/#operation/getV1GlobalmetricsQuotesLatest">
-        Get total crypto market cap, BTC dominance, and DeFi volume with `/v1/global-metrics/quotes/latest`.
+      <Card title="Global Metrics" icon="globe" href="/api-reference/global-metrics/latest">
+        Get total crypto market cap, BTC dominance, and DeFi volume — the macro signals every investor watches.
       </Card>
-      <Card title="DEX Pairs" icon="arrow-right-arrow-left" href="https://coinmarketcap.com/api/documentation/v1/">
-        Analyse liquidity pool data and swap volumes across decentralised exchanges.
+      <Card title="DEX Pairs" icon="arrow-right-arrow-left" href="/api-reference/dex/pairs">
+        Analyse liquidity pool data and swap volumes across decentralised exchanges to spot on-chain opportunities.
       </Card>
     </CardGroup>
 
-    Browse the complete endpoint catalog in the [API Reference](https://coinmarketcap.com/api/documentation/v1/) or check the [Plans & Credits](/plans-and-credits) page to understand what's available on your current plan.
+    Browse the complete endpoint catalog in the [API Reference](/api-reference/overview) or check the [Plans & Credits](/plans-and-credits) page to understand what's available on your current plan.
   </Step>
 </Steps>

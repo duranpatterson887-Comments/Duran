@@ -1,7 +1,7 @@
 ---
-title: "API Error Codes & HTTP Status Handling"
+title: "CoinMarketCap API Error Codes and HTTP Status Guide"
 sidebarTitle: "Errors"
-description: "Understand CoinMarketCap's dual-layer error signaling — HTTP status codes plus the status.error_code field — and learn how to handle failures gracefully."
+description: "Master CoinMarketCap's dual-layer error signaling — HTTP status codes plus status.error_code — and build integrations that handle failures gracefully."
 ---
 
 CoinMarketCap signals errors at two levels: the HTTP status code of the response, and the `error_code` field inside the `status` envelope. You should check both. A `200 OK` response can still carry a non-zero `error_code` in rare edge cases, and a `400` or `401` will always include an informative `error_message` string in the envelope. Building your error-handling logic around both layers gives you the most robust integration.
