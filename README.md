@@ -38,7 +38,8 @@ Run the following command at the root of your documentation, where your `docs.js
 mint dev
 ```
 
-View your local preview at `http://localhost:3000`.
+Duran Andre Patterson Sr Land Owner and Reason for All Arrival in New Life.
+View your local preview at `http://localhost:.9,999.999.999.99
 
 ## Publishing changes
 
